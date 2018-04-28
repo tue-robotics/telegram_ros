@@ -26,13 +26,13 @@ Compile your workspace
 
 #### Output
 
-- `message_from_telegram` [std_msgs/String](http://docs.ros.org/api/std_msgs/html/msg/String.html)
-- `photo_from_telegram` [sensor_msgs/Image](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html)
+- `message_from_telegram` ([std_msgs/String](http://docs.ros.org/api/std_msgs/html/msg/String.html))
+- `photo_from_telegram` ([sensor_msgs/Image](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html))
 
 #### Input
 
-- `message_to_telegram` [std_msgs/String](http://docs.ros.org/api/std_msgs/html/msg/String.html)
-- `photo_to_telegram` [sensor_msgs/Image](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html)
+- `message_to_telegram` ([std_msgs/String](http://docs.ros.org/api/std_msgs/html/msg/String.html))
+- `photo_to_telegram` ([sensor_msgs/Image](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html))
 
 ### Parameters
 
