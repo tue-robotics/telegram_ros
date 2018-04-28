@@ -3,37 +3,43 @@ from StringIO import StringIO
 
 import cv2
 import numpy as np
+import rospy
 from cv_bridge import CvBridge
+from sensor_msgs.msg import Image
+from std_msgs.msg import String
 from telegram.error import TimedOut
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
-from std_msgs.msg import String
-from sensor_msgs.msg import Image
-
-import rospy
-
 
 class TelegramROSBridge(object):
-    def __init__(self, token):
+    def __init__(self, api_token):
         # ROS IO
-        self._from_telegram_string_publisher = rospy.Publisher("from_telegram/string", String, queue_size=10)
-        self._from_telegram_image_publisher = rospy.Publisher("from_telegram/image", Image, queue_size=10)
-        self._to_telegram_string_subscriber = rospy.Subscriber("to_telegram/string", String,
+        """
+        Telegram ROS bridge that bridges between a telegram chat conversation and ROS        
+        :param api_token: The telegram API token
+        """
+        self._from_telegram_string_publisher = rospy.Publisher("message_from_telegram", String, queue_size=10)
+        self._from_telegram_image_publisher = rospy.Publisher("photo_from_telegram", Image, queue_size=10)
+        self._to_telegram_string_subscriber = rospy.Subscriber("message_to_telegram", String,
                                                                self._ros_string_callback, queue_size=10)
-        self._to_telegram_image_subscriber = rospy.Subscriber("to_telegram/image", Image,
+        self._to_telegram_image_subscriber = rospy.Subscriber("photo_to_telegram", Image,
                                                               self._ros_image_callback, queue_size=10)
         # Set CvBridge
         self._cv_bridge = CvBridge()
 
         # Telegram IO
         self._telegram_chat_id = None
-        self._telegram_updater = Updater(token)
-        self._telegram_updater.dispatcher.add_error_handler(self._telegram_error_callback)
+        self._telegram_updater = Updater(api_token)
+        self._telegram_updater.dispatcher.add_error_handler(
+            lambda _, update, error: rospy.logerr("Update {} caused error {}".format(update, error)))
         self._telegram_updater.dispatcher.add_handler(CommandHandler("start", self._telegram_start_callback))
         self._telegram_updater.dispatcher.add_handler(MessageHandler(Filters.text, self._telegram_message_callback))
         self._telegram_updater.dispatcher.add_handler(MessageHandler(Filters.photo, self._telegram_photo_callback))
 
     def spin(self):
+        """
+        Starts the telegram update thread and spins until a SIGINT is received
+        """
         self._telegram_updater.start_polling()
         rospy.loginfo("Telegram updater started polling, spinning ..")
 
@@ -42,11 +48,12 @@ class TelegramROSBridge(object):
 
         self._telegram_updater.stop()
 
-    @staticmethod
-    def _telegram_error_callback(bot, update, error):
-        rospy.logerr("Update {} caused error {}".format(update, error))
-
-    def _telegram_start_callback(self, bot, update):
+    def _telegram_start_callback(self, _, update):
+        """
+        Called when a telegram user sends the '/start' event to the bot, using this event, the bridge can be connected
+        to a specific conversation
+        :param update: Received update event that holds the chat_id and message data 
+        """
         if self._telegram_chat_id is not None and self._telegram_chat_id != update.message.chat_id:
             rospy.logwarn("Changing to different chat_id!")
             self._telegram_updater.bot.send_message(self._telegram_chat_id,
@@ -55,17 +62,29 @@ class TelegramROSBridge(object):
         self._telegram_chat_id = update.message.chat_id
 
         rospy.loginfo("Starting telegram ROS bridge for chat id {}".format(self._telegram_chat_id))
-        update.message.reply_text("Telegram ROS bridge initialized, only replying to chat_id {} (current)".format(self._telegram_chat_id))
+        update.message.reply_text(
+            "Telegram ROS bridge initialized, only replying to chat_id {} (current)".format(self._telegram_chat_id))
 
-    def _telegram_message_callback(self, bot, update):
+    def _telegram_message_callback(self, _, update):
+        """
+        Called when a new telegram message has been received. The method will verify whether the incoming message is
+        from the bridges telegram conversation by comparing the chat_id.
+        :param update: Received update that holds the chat_id and message data
+        """
         if self._telegram_chat_id is None:
             update.message.reply_text("ROS Bridge not initialized. Type /start to set-up ROS bridge")
         elif self._telegram_chat_id != update.message.chat_id:
-            update.message.reply_text("ROS Bridge initialized to another chat_id. Type /start to connect to this chat_id")
+            update.message.reply_text(
+                "ROS Bridge initialized to another chat_id. Type /start to connect to this chat_id")
         else:
             self._from_telegram_string_publisher.publish(String(data=update.message.text))
 
-    def _telegram_photo_callback(self, bot, update):
+    def _telegram_photo_callback(self, _, update):
+        """
+        Called when a new telegram photo has been received. The method will verify whether the incoming message is
+        from the bridges telegram conversation by comparing the chat_id.
+        :param update: Received update that holds the chat_id and message data
+        """
         rospy.logdebug("Received image, downloading highest resolution image ...")
         byte_array = update.message.photo[-1].get_file().download_as_bytearray()
         rospy.logdebug("Download complete")
@@ -75,6 +94,10 @@ class TelegramROSBridge(object):
         self._from_telegram_image_publisher.publish(msg)
 
     def _ros_string_callback(self, msg):
+        """
+        Called when a new ROS String message is coming in that should be send to the telegram conversation
+        :param msg: String message
+        """
         if not self._telegram_chat_id:
             rospy.logerr("ROS Bridge not initialized, dropping string message")
         else:
@@ -84,6 +107,10 @@ class TelegramROSBridge(object):
                 rospy.logerr("Failed to send message {}: {}".format(msg.data, e))
 
     def _ros_image_callback(self, msg):
+        """
+        Called when a new ROS Image message is coming in that should be send to the telegram conversation
+        :param msg: Image message
+        """
         if not self._telegram_chat_id:
             rospy.logerr("ROS Bridge not initialized, dropping image message")
         else:
@@ -99,4 +126,3 @@ if __name__ == '__main__':
 
     bridge = TelegramROSBridge(token)
     bridge.spin()
-
