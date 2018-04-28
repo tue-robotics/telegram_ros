@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+from telegram.error import TimedOut
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+
+from std_msgs.msg import String
+from sensor_msgs.msg import Image
+
+import rospy
+
+
+class TelegramROSBridge(object):
+    def __init__(self, token):
+        # ROS IO
+        self._from_telegram_string_publisher = rospy.Publisher("from_telegram/string", String, queue_size=10)
+        self._from_telegram_image_publisher = rospy.Publisher("from_telegram/image", Image, queue_size=10)
+        self._to_telegram_string_subscriber = rospy.Subscriber("to_telegram/string", String,
+                                                               self._ros_string_callback, queue_size=10)
+        self._to_telegram_image_subscriber = rospy.Subscriber("to_telegram/image", Image,
+                                                              self._ros_image_callback, queue_size=10)
+
+        # Telegram IO
+        self._telegram_bot = None
+        self._telegram_chat_id = None
+        self._telegram_updater = Updater(token)
+        self._telegram_updater.dispatcher.add_handler(CommandHandler("start", self._telegram_start_callback))
+        self._telegram_updater.dispatcher.add_handler(MessageHandler(Filters.text, self._telegram_message_callback))
+
+    def run(self):
+        self._telegram_updater.start_polling()
+
+    def _telegram_start_callback(self, bot, update):
+        if self._telegram_bot and self._telegram_chat_id != update.message.chat_id:
+            rospy.logwarn("Changing to different chat_id!")
+            self._telegram_bot.send_message(self._telegram_chat_id,
+                                            "Lost ROS bridge connection to this chat_id (somebody took over)")
+
+        self._telegram_bot = bot
+        self._telegram_chat_id = update.message.chat_id
+
+        rospy.loginfo("Starting telegram ROS bridge for chat id {}".format(self._telegram_chat_id))
+        update.message.reply_text("Telegram ROS bridge initialized, only replying to chat_id {}".format(self._telegram_chat_id))
+
+    def _telegram_message_callback(self, bot, update):
+        if not self._telegram_bot:
+            update.message.reply_text("ROS Bridge not initialized. Type /start to set-up ROS bridge")
+        elif self._telegram_chat_id != update.message.chat_id:
+            update.message.reply_text("ROS Bridge initialized to another chat_id. Type /start to connect to this chat_id")
+        else:
+            self._from_telegram_string_publisher.publish(String(data=update.message.text))
+
+    def _ros_string_callback(self, msg):
+        if not self._telegram_bot:
+            rospy.logerr("ROS Bridge not initialized, dropping string message")
+        else:
+            try:
+                self._telegram_bot.send_message(self._telegram_chat_id, msg.data)
+            except TimedOut as e:
+                rospy.logerr("Failed to send message {}: {}".format(msg.data, e))
+
+    def _ros_image_callback(self, msg):
+        if not self._telegram_bot:
+            rospy.logerr("ROS Bridge not initialized, dropping image message")
+        else:
+            pass
+
+
+if __name__ == '__main__':
+    rospy.init_node('telegram_ros_bridge')
+    token = rospy.get_param('~token')
+
+    bridge = TelegramROSBridge(token)
+    bridge.run()
+
