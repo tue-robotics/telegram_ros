@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from StringIO import StringIO
 
 import cv2
@@ -12,12 +14,14 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 
 class TelegramROSBridge(object):
-    def __init__(self, api_token):
+    def __init__(self, api_token, caption_as_frame_id):
         # ROS IO
         """
         Telegram ROS bridge that bridges between a telegram chat conversation and ROS        
         :param api_token: The telegram API token
         """
+        self._caption_as_frame_id = caption_as_frame_id
+
         self._from_telegram_string_publisher = rospy.Publisher("message_from_telegram", String, queue_size=10)
         self._from_telegram_image_publisher = rospy.Publisher("photo_from_telegram", Image, queue_size=10)
         self._to_telegram_string_subscriber = rospy.Subscriber("message_to_telegram", String,
@@ -103,7 +107,13 @@ class TelegramROSBridge(object):
 
             img = cv2.imdecode(np.asarray(byte_array, dtype=np.uint8), cv2.IMREAD_COLOR)
             msg = self._cv_bridge.cv2_to_imgmsg(img, encoding="bgr8")
+
+            if self._caption_as_frame_id:
+                msg.header.frame_id = update.message.caption
             self._from_telegram_image_publisher.publish(msg)
+
+            if update.message.caption:
+                self._from_telegram_string_publisher.publish(String(data=update.message.caption))
 
     def _ros_string_callback(self, msg):
         """
@@ -134,6 +144,7 @@ class TelegramROSBridge(object):
 if __name__ == '__main__':
     rospy.init_node('telegram_ros_bridge')
     token = rospy.get_param('~token')
+    caption_as_frame_id = rospy.get_param('~caption_as_frame_id', False)
 
-    bridge = TelegramROSBridge(token)
+    bridge = TelegramROSBridge(token, caption_as_frame_id)
     bridge.spin()

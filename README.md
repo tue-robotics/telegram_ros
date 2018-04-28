@@ -37,3 +37,4 @@ Compile your workspace
 ### Parameters
 
 - `~token` (string): Telegram BOT API token
+- `~caption_as_frame_id` (bool): Whether to put the caption of the image in the frame_id (default=`False`)
