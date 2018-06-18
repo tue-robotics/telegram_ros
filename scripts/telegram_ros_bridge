@@ -26,7 +26,7 @@ class TelegramROSBridge(object):
         self._from_telegram_image_publisher = rospy.Publisher("image_to_ros", Image, queue_size=10)
         self._to_telegram_string_subscriber = rospy.Subscriber("message_from_ros", String,
                                                                self._ros_string_callback, queue_size=10)
-        self._to_telegram_image_subscriber = rospy.Subscriber("message_from_ros", Image,
+        self._to_telegram_image_subscriber = rospy.Subscriber("image_from_ros", Image,
                                                               self._ros_image_callback, queue_size=10)
         # Set CvBridge
         self._cv_bridge = CvBridge()
