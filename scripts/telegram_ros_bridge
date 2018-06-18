@@ -22,11 +22,11 @@ class TelegramROSBridge(object):
         """
         self._caption_as_frame_id = caption_as_frame_id
 
-        self._from_telegram_string_publisher = rospy.Publisher("message_from_telegram", String, queue_size=10)
-        self._from_telegram_image_publisher = rospy.Publisher("photo_from_telegram", Image, queue_size=10)
-        self._to_telegram_string_subscriber = rospy.Subscriber("message_to_telegram", String,
+        self._from_telegram_string_publisher = rospy.Publisher("message_to_ros", String, queue_size=10)
+        self._from_telegram_image_publisher = rospy.Publisher("image_to_ros", Image, queue_size=10)
+        self._to_telegram_string_subscriber = rospy.Subscriber("message_from_ros", String,
                                                                self._ros_string_callback, queue_size=10)
-        self._to_telegram_image_subscriber = rospy.Subscriber("photo_to_telegram", Image,
+        self._to_telegram_image_subscriber = rospy.Subscriber("message_from_ros", Image,
                                                               self._ros_image_callback, queue_size=10)
         # Set CvBridge
         self._cv_bridge = CvBridge()
