@@ -16,6 +16,10 @@ Compile your workspace
 
     catkin build # or catkin_make (make sure to refresh your workspace env afterwards)
 
+## Create a bot
+
+If you don't have a bot yet, chat to [BotFather](https://core.telegram.org/bots#6-botfather) in Telegram to create one. You can provide a name for your bot and you will receive the API token. 
+
 ## Run
 
     rosrun telegram_ros telegram_ros_bridge _token:=[YOUR_BOT_API_TOKEN]
