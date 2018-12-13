@@ -152,29 +152,28 @@ class TelegramROSBridge(object):
     def _telegram_location_callback(self, _, update):
         """
         Called when a new telegram Location is received. The method will verify whether the incoming Location is
-        from the bridges telegram conversation by comparing the chat_id.
+        from the bridged telegram conversation by comparing the chat_id.
         :param update: Received update that holds the chat_id and message data
         """
         location = update.message.location
-        if isinstance(location, Location):
-            rospy.loginfo("Incoming location from telegram: {}".format(location))
-            if self._telegram_chat_id is None:
-                rospy.logwarn("Discarding message. No active chat_id.")
-                update.message.reply_text("ROS Bridge not initialized. Type /start to set-up ROS bridge")
-            elif self._telegram_chat_id != update.message.chat_id:
-                rospy.logwarn("Discarding message. Invalid chat_id")
-                update.message.reply_text(
-                    "ROS Bridge initialized to another chat_id. Type /start to connect to this chat_id")
-            else:
-                navsatfix = NavSatFix()
-                navsatfix.header.stamp = update.message.date # TODO convert tot ROS Time
-                sec_since_epoch = (update.message.date - datetime.datetime(1970,1,1)).total_seconds()
-                navsatfix.header.stamp = rospy.Time.from_sec(sec_since_epoch)
-                navsatfix.header.frame_id = "telegram"
-                navsatfix.latitude = location.latitude
-                navsatfix.longitude = location.longitude
-                navsatfix.position_covariance_type = NavSatFix.COVARIANCE_TYPE_UNKNOWN
-                self._from_telegram_location_publisher.publish(navsatfix)
+        rospy.loginfo("Incoming location from telegram: {}".format(location))
+        
+        if self._telegram_chat_id is None:
+            rospy.logwarn("Discarding message. No active chat_id.")
+            update.message.reply_text("ROS Bridge not initialized. Type /start to set-up ROS bridge")
+        elif self._telegram_chat_id != update.message.chat_id:
+            rospy.logwarn("Discarding message. Invalid chat_id")
+            update.message.reply_text(
+                "ROS Bridge initialized to another chat_id. Type /start to connect to this chat_id")
+        else:
+            navsatfix = NavSatFix()
+            navsatfix.header.stamp = update.message.date # TODO convert tot ROS Time
+            sec_since_epoch = (update.message.date - datetime.datetime(1970,1,1)).total_seconds()
+            navsatfix.header.stamp = rospy.Time.from_sec(sec_since_epoch)
+            navsatfix.latitude = location.latitude
+            navsatfix.longitude = location.longitude
+            navsatfix.position_covariance_type = NavSatFix.COVARIANCE_TYPE_UNKNOWN
+            self._from_telegram_location_publisher.publish(navsatfix)
 
     def _ros_location_callback(self, msg):
         """
