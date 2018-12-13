@@ -182,7 +182,7 @@ class TelegramROSBridge(object):
         :param msg: NavSatFix that the robot wants to share
         """
         if not self._telegram_chat_id:
-            rospy.logerr("ROS Bridge not initialized, dropping string message")
+            rospy.logerr("ROS Bridge not initialized, dropping location message")
         else:
             location = Location(msg.longitude, msg.latitude)
             try:
