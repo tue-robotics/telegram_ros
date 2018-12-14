@@ -19,7 +19,7 @@ class TelegramROSBridge(object):
     def __init__(self, api_token, caption_as_frame_id):
         # ROS IO
         """
-        Telegram ROS bridge that bridges between a telegram chat conversation and ROS        
+        Telegram ROS bridge that bridges between a telegram chat conversation and ROS
         :param api_token: The telegram API token
         """
         self._caption_as_frame_id = caption_as_frame_id
@@ -33,7 +33,7 @@ class TelegramROSBridge(object):
         self._to_telegram_image_subscriber = rospy.Subscriber("image_from_ros", Image,
                                                               self._ros_image_callback, queue_size=10)
         self._to_telegram_location_subscriber = rospy.Subscriber("location_from_ros", NavSatFix,
-                                                              self._ros_location_callback, queue_size=10)
+                                                                 self._ros_location_callback, queue_size=10)
         # Set CvBridge
         self._cv_bridge = CvBridge()
 
@@ -46,7 +46,8 @@ class TelegramROSBridge(object):
         self._telegram_updater.dispatcher.add_handler(CommandHandler("start", self._telegram_start_callback))
         self._telegram_updater.dispatcher.add_handler(MessageHandler(Filters.text, self._telegram_message_callback))
         self._telegram_updater.dispatcher.add_handler(MessageHandler(Filters.photo, self._telegram_photo_callback))
-        self._telegram_updater.dispatcher.add_handler(MessageHandler(Filters.location, self._telegram_location_callback))
+        self._telegram_updater.dispatcher.add_handler(
+            MessageHandler(Filters.location, self._telegram_location_callback))
 
     def spin(self):
         """
@@ -64,7 +65,7 @@ class TelegramROSBridge(object):
         """
         Called when a telegram user sends the '/start' event to the bot, using this event, the bridge can be connected
         to a specific conversation
-        :param update: Received update event that holds the chat_id and message data 
+        :param update: Received update event that holds the chat_id and message data
         """
         if self._telegram_chat_id is not None and self._telegram_chat_id != update.message.chat_id:
             rospy.logwarn("Changing to different chat_id!")
@@ -157,7 +158,7 @@ class TelegramROSBridge(object):
         """
         location = update.message.location
         rospy.loginfo("Incoming location from telegram: {}".format(location))
-        
+
         if self._telegram_chat_id is None:
             rospy.logwarn("Discarding message. No active chat_id.")
             update.message.reply_text("ROS Bridge not initialized. Type /start to set-up ROS bridge")
@@ -167,7 +168,7 @@ class TelegramROSBridge(object):
                 "ROS Bridge initialized to another chat_id. Type /start to connect to this chat_id")
         else:
             navsatfix = NavSatFix()
-            sec_since_epoch = (update.message.date - datetime.datetime(1970,1,1)).total_seconds()
+            sec_since_epoch = (update.message.date - datetime.datetime(1970, 1, 1)).total_seconds()
             navsatfix.header.stamp = rospy.Time.from_sec(sec_since_epoch)
             navsatfix.latitude = location.latitude
             navsatfix.longitude = location.longitude
@@ -187,6 +188,7 @@ class TelegramROSBridge(object):
                 self._telegram_updater.bot.send_location(self._telegram_chat_id, location=location)
             except TimedOut as e:
                 rospy.logerr("Failed to send location {}: {}".format(location, e))
+
 
 if __name__ == '__main__':
     rospy.init_node('telegram_ros_bridge')
