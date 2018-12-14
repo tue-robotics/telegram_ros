@@ -2,6 +2,10 @@
 
 Bridges between a [Telegram](https://telegram.org/) conversation and [ROS](http://ros.org).
 
+## Travis CI Build Status
+
+[![Build Status](https://travis-ci.org/tue-robotics/telegram_ros.svg)](https://travis-ci.org/tue-robotics/telegram_ros)
+
 ## Installation (from source)
 
 Go to the `src` directory of your catkin workspace and clone the package from github:
