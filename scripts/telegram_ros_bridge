@@ -45,7 +45,6 @@ class TelegramROSBridge(object):
         self._telegram_updater.dispatcher.add_error_handler(
             lambda _, update, error: rospy.logerr("Update {} caused error {}".format(update, error)))
 
-
         self._telegram_updater.dispatcher.add_handler(CommandHandler("start", self._telegram_start_callback))
         self._telegram_updater.dispatcher.add_handler(MessageHandler(Filters.text, self._telegram_message_callback))
         self._telegram_updater.dispatcher.add_handler(MessageHandler(Filters.photo, self._telegram_photo_callback))
