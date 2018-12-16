@@ -32,11 +32,13 @@ If you don't have a bot yet, chat to [BotFather](https://core.telegram.org/bots#
 
 - `message_to_ros` ([std_msgs/String](http://docs.ros.org/api/std_msgs/html/msg/String.html))
 - `image_to_ros` ([sensor_msgs/Image](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html))
+- `location_to_ros` ([sensor_msgs/NavSatFix](http://docs.ros.org/api/sensor_msgs/html/msg/NavSatFix.html))
 
 #### Input
 
 - `message_from_ros` ([std_msgs/String](http://docs.ros.org/api/std_msgs/html/msg/String.html))
 - `image_from_ros` ([sensor_msgs/Image](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html))
+- `location_from_ros` ([sensor_msgs/NavSatFix](http://docs.ros.org/api/sensor_msgs/html/msg/NavSatFix.html))
 
 ### Parameters
 
