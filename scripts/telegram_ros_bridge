@@ -14,6 +14,8 @@ from telegram.error import TimedOut
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import Location
 
+import functools
+
 
 class TelegramROSBridge(object):
     def __init__(self, api_token, caption_as_frame_id):
@@ -42,6 +44,7 @@ class TelegramROSBridge(object):
         self._telegram_updater = Updater(api_token)
         self._telegram_updater.dispatcher.add_error_handler(
             lambda _, update, error: rospy.logerr("Update {} caused error {}".format(update, error)))
+
 
         self._telegram_updater.dispatcher.add_handler(CommandHandler("start", self._telegram_start_callback))
         self._telegram_updater.dispatcher.add_handler(MessageHandler(Filters.text, self._telegram_message_callback))
@@ -78,6 +81,28 @@ class TelegramROSBridge(object):
         update.message.reply_text(
             "Telegram ROS bridge initialized, only replying to chat_id {} (current)".format(self._telegram_chat_id))
 
+    def allow_only_active(callback_function):
+        """
+        Decorator to restrict telegram methods only to the active chat or tell to /start one if needed
+        :param callback_function: A callback function taking a telegram.Bot and a telegram.Update
+        :return: Wrapped callback funtion
+        """
+
+        @functools.wraps(callback_function)
+        def wrapper(self, bot, update):
+            if self._telegram_chat_id is None:
+                rospy.logwarn("Discarding message. No active chat_id.")
+                update.message.reply_text("ROS Bridge not initialized. Type /start to set-up ROS bridge")
+            elif self._telegram_chat_id != update.message.chat_id:
+                rospy.logwarn("Discarding message. Invalid chat_id")
+                update.message.reply_text(
+                    "ROS Bridge initialized to another chat_id. Type /start to connect to this chat_id")
+            else:
+                callback_function(self, bot, update)
+
+        return wrapper
+
+    @allow_only_active
     def _telegram_message_callback(self, _, update):
         """
         Called when a new telegram message has been received. The method will verify whether the incoming message is
@@ -96,6 +121,7 @@ class TelegramROSBridge(object):
         else:
             self._from_telegram_string_publisher.publish(String(data=text))
 
+    @allow_only_active
     def _telegram_photo_callback(self, _, update):
         """
         Called when a new telegram photo has been received. The method will verify whether the incoming message is
@@ -150,6 +176,7 @@ class TelegramROSBridge(object):
             self._telegram_updater.bot.send_photo(self._telegram_chat_id,
                                                   photo=StringIO(cv2.imencode('.jpg', cv2_img)[1].tostring()))
 
+    @allow_only_active
     def _telegram_location_callback(self, _, update):
         """
         Called when a new telegram Location is received. The method will verify whether the incoming Location is
