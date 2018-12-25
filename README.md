@@ -50,7 +50,13 @@ If you don't have a bot yet, chat to [BotFather](https://core.telegram.org/bots#
 - `image_from_ros` ([sensor_msgs/Image](http://docs.ros.org/api/sensor_msgs/html/msg/Image.html))
 - `location_from_ros` ([sensor_msgs/NavSatFix](http://docs.ros.org/api/sensor_msgs/html/msg/NavSatFix.html))
 
+### Services
+- `add_user_to_whitelist` ([telegram_ros/AddUserToWhitelist](http://docs.ros.org/api/telegram_ros/html/srv/AddUserToWhitelist.html))
+
 ### Parameters
 
 - `~token` (string): Telegram BOT API token
 - `~caption_as_frame_id` (bool): Whether to put the caption of the image in the frame_id (default=`False`)
+- `~whitelist/required` (bool): True when only whitelisted users can chat with the bot or False when everyone can use the bot (default=`False`)
+- `~whitelist/users` (dict {string:int}): Mapping of username to Telegram user ID. Only these users are allowed to chat with the bot. 
+    Users can be added with the `add_user_to_whitelist` service.
