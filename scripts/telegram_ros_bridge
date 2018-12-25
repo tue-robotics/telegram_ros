@@ -19,7 +19,8 @@ from telegram_ros.msg import Options
 from telegram_ros.srv import AddUserToWhitelist, AddUserToWhitelistRequest, AddUserToWhitelistResponse
 
 
-WHITELIST_PARAM = "~whitelisted_users"
+WHITELIST_USERS = "~whitelist/users"
+WHITELIST_REQ = "~whitelist/required"
 
 
 class TelegramROSBridge(object):
@@ -30,8 +31,9 @@ class TelegramROSBridge(object):
         """
         self._caption_as_frame_id = caption_as_frame_id
 
+        self._whitelist_required = rospy.get_param(WHITELIST_REQ, False)  # Not the safe default but is consistent with current behavior
         # Whitelisted users is a mapping from a name (for your reference) to id
-        self._whitelisted_users = rospy.get_param(WHITELIST_PARAM, {})
+        self._whitelisted_users = rospy.get_param(WHITELIST_USERS, {})
 
         self._from_telegram_string_publisher = rospy.Publisher("message_to_ros", String, queue_size=10)
         self._from_telegram_image_publisher = rospy.Publisher("image_to_ros", Image, queue_size=10)
@@ -84,8 +86,10 @@ class TelegramROSBridge(object):
 
         @functools.wraps(callback_function)
         def wrapper(self, bot, update):
-            self._whitelisted_users = rospy.get_param("~whitelisted_users", {})
-            if update.message.from_user.id in self._whitelisted_users.values():
+            self._whitelist_required = rospy.get_param(WHITELIST_REQ,False)
+            self._whitelisted_users = rospy.get_param(WHITELIST_USERS, {})
+
+            if not self._whitelist_required or update.message.from_user.id in self._whitelisted_users.values():
                 callback_function(self, bot, update)
             else:
                 rospy.logwarn("Discarding message. User {} not whitelisted".format(update.message.from_user))
@@ -259,7 +263,7 @@ class TelegramROSBridge(object):
 
     def _ros_add_user_to_whitelist(self, add_user_req):
         self._whitelisted_users[add_user_req.name] = add_user_req.user_id
-        rospy.set_param(WHITELIST_PARAM, self._whitelisted_users)
+        rospy.set_param(WHITELIST_USERS, self._whitelisted_users)
 
         rospy.loginfo("Added user '{}' with id {} to whitelist".format(add_user_req.name, add_user_req.user_id))
 
