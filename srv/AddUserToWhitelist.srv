@@ -1,0 +1,5 @@
+string name
+int32 user_id
+---
+bool success
+string message
