@@ -3,7 +3,8 @@
 Bridges between a [Telegram](https://telegram.org/) conversation and [ROS](http://ros.org).
 
 Only a single Telegram user can send and receive text, images and locations to/from the ROS bridge.
-A user must send the `/start` command to start a conversation. A new user can then `/start` as well and take over. 
+A user must send the `/start` command to start a conversation. A new user can then `/start` as well and take over.
+Once connected, a user can type `/stop` to disconnect
 
 Currently, there is *no* authentication (Issue #6)
 
