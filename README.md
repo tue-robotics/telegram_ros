@@ -2,6 +2,11 @@
 
 Bridges between a [Telegram](https://telegram.org/) conversation and [ROS](http://ros.org).
 
+Only a single Telegram user can send and receive text, images and locations to/from the ROS bridge.
+A user must send the `/start` command to start a conversation. A new user can then `/start` as well and take over. 
+
+Currently, there is *no* authentication (Issue #6)
+
 ## Travis CI Build Status
 
 [![Build Status](https://travis-ci.org/tue-robotics/telegram_ros.svg)](https://travis-ci.org/tue-robotics/telegram_ros)
