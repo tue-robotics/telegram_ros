@@ -16,9 +16,6 @@ from telegram.error import TimedOut
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram_ros.msg import Options
 
-from telegram_ros.srv import AddUserToWhitelist, AddUserToWhitelistRequest, AddUserToWhitelistResponse
-
-
 WHITELIST_USERS = "~whitelist/users"
 WHITELIST_REQ = "~whitelist/required"
 
@@ -47,8 +44,7 @@ class TelegramROSBridge(object):
                                                                  self._ros_location_callback, queue_size=10)
         self._to_telegram_options_subscriber = rospy.Subscriber("options_from_ros", Options,
                                                                  self._ros_options_callback, queue_size=10)
-		self._add_user_srv = rospy.Service("add_user_to_whitelist", AddUserToWhitelist, self._ros_add_user_to_whitelist)
-        
+
         # Set CvBridge
         self._cv_bridge = CvBridge()
 
@@ -261,13 +257,6 @@ class TelegramROSBridge(object):
                                                                                  one_time_keyboard=True)
         )
 
-    def _ros_add_user_to_whitelist(self, add_user_req):
-        self._whitelisted_users[add_user_req.name] = add_user_req.user_id
-        rospy.set_param(WHITELIST_USERS, self._whitelisted_users)
-
-        rospy.loginfo("Added user '{}' with id {} to whitelist".format(add_user_req.name, add_user_req.user_id))
-
-        return AddUserToWhitelistResponse(success=True)
 
 if __name__ == '__main__':
     rospy.init_node('telegram_ros_bridge')
