@@ -44,6 +44,7 @@ class TelegramROSBridge(object):
             lambda _, update, error: rospy.logerr("Update {} caused error {}".format(update, error)))
 
         self._telegram_updater.dispatcher.add_handler(CommandHandler("start", self._telegram_start_callback))
+        self._telegram_updater.dispatcher.add_handler(CommandHandler("stop", self._telegram_stop_callback))
         self._telegram_updater.dispatcher.add_handler(MessageHandler(Filters.text, self._telegram_message_callback))
         self._telegram_updater.dispatcher.add_handler(MessageHandler(Filters.photo, self._telegram_photo_callback))
         self._telegram_updater.dispatcher.add_handler(
@@ -76,7 +77,20 @@ class TelegramROSBridge(object):
 
         rospy.loginfo("Starting telegram ROS bridge for chat id {}".format(self._telegram_chat_id))
         update.message.reply_text(
-            "Telegram ROS bridge initialized, only replying to chat_id {} (current)".format(self._telegram_chat_id))
+            "Telegram ROS bridge initialized, only replying to chat_id {} (current). Type /stop to disconnect".format(self._telegram_chat_id))
+
+    @telegram_callback
+    def _telegram_stop_callback(self, _, update):
+        """
+        Called when a telegram user sends the '/stop' event to the bot. Then, the user is disconnected from the bot and
+        will no longer receive messages.
+        :param update: Received update event that holds the chat_id and message data
+        """
+
+        rospy.loginfo("Stopping telegram ROS bridge for chat id {}".format(self._telegram_chat_id))
+        update.message.reply_text("Disconnecting chat_id {}. So long and thanks for all the fish!"
+                                  " Type /start to reconnect".format(self._telegram_chat_id))
+        self._telegram_chat_id = None
 
     def telegram_callback(callback_function):
         """
