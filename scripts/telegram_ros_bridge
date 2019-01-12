@@ -77,7 +77,7 @@ class TelegramROSBridge(object):
 
         self._telegram_updater.stop()
 
-    def allow_only_registered(callback_function):
+    def telegram_allow_only_registered(callback_function):
         """
         Decorator to restrict telegram methods only to registered users
         :param callback_function: A callback function taking a telegram.Bot and a telegram.Update
@@ -96,7 +96,7 @@ class TelegramROSBridge(object):
                 update.message.reply_text("You are not authorized to chat with this bot")
         return wrapper
 
-    @allow_only_registered
+    @telegram_allow_only_registered
     def _telegram_start_callback(self, _, update):
         """
         Called when a telegram user sends the '/start' event to the bot, using this event, the bridge can be connected
@@ -114,7 +114,7 @@ class TelegramROSBridge(object):
         update.message.reply_text(
             "Telegram ROS bridge initialized, only replying to chat_id {} (current)".format(self._telegram_chat_id))
 
-    def telegram_callback(callback_function):
+    def telegram_allow_only_active(callback_function):
         """
         Decorator to restrict telegram methods only to the active chat or tell to /start one if needed
         :param callback_function: A callback function taking a telegram.Bot and a telegram.Update
@@ -168,7 +168,7 @@ class TelegramROSBridge(object):
 
         return wrapper
 
-    @telegram_callback
+    @telegram_allow_only_active
     def _telegram_message_callback(self, _, update):
         """
         Called when a new telegram message has been received. The method will verify whether the incoming message is
@@ -186,7 +186,7 @@ class TelegramROSBridge(object):
         """
         self._telegram_updater.bot.send_message(self._telegram_chat_id, msg.data)
 
-    @telegram_callback
+    @telegram_allow_only_active
     def _telegram_photo_callback(self, _, update):
         """
         Called when a new telegram photo has been received. The method will verify whether the incoming message is
@@ -219,7 +219,7 @@ class TelegramROSBridge(object):
                                               photo=StringIO(cv2.imencode('.jpg', cv2_img)[1].tostring()),
                                               caption=msg.header.frame_id)
 
-    @telegram_callback
+    @telegram_allow_only_active
     def _telegram_location_callback(self, _, update):
         """
         Called when a new telegram Location is received. The method will verify whether the incoming Location is
