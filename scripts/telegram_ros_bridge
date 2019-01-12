@@ -79,6 +79,7 @@ class TelegramROSBridge(object):
         update.message.reply_text(
             "Telegram ROS bridge initialized, only replying to chat_id {} (current). Type /stop to disconnect".format(self._telegram_chat_id))
 
+    @telegram_callback
     def _telegram_stop_callback(self, _, update):
         """
         Called when a telegram user sends the '/stop' event to the bot. Then, the user is disconnected from the bot and
