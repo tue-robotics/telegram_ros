@@ -93,7 +93,7 @@ class TelegramROSBridge(object):
             rospy.logwarn("Discarding message. User {} not whitelisted".format(update.message.from_user))
             update.message.reply_text("You (chat id {}) are not authorized to chat with this bot".format(update.message.from_user['id']))
 
-    def telegram_allow_only_active(callback_function):
+    def telegram_callback(callback_function):
         """
         Decorator to restrict telegram methods only to the active chat or tell to /start one if needed
         :param callback_function: A callback function taking a telegram.Bot and a telegram.Update
@@ -147,7 +147,7 @@ class TelegramROSBridge(object):
 
         return wrapper
 
-    @telegram_allow_only_active
+    @telegram_callback
     def _telegram_message_callback(self, _, update):
         """
         Called when a new telegram message has been received. The method will verify whether the incoming message is
@@ -165,7 +165,7 @@ class TelegramROSBridge(object):
         """
         self._telegram_updater.bot.send_message(self._telegram_chat_id, msg.data)
 
-    @telegram_allow_only_active
+    @telegram_callback
     def _telegram_photo_callback(self, _, update):
         """
         Called when a new telegram photo has been received. The method will verify whether the incoming message is
@@ -198,7 +198,7 @@ class TelegramROSBridge(object):
                                               photo=StringIO(cv2.imencode('.jpg', cv2_img)[1].tostring()),
                                               caption=msg.header.frame_id)
 
-    @telegram_allow_only_active
+    @telegram_callback
     def _telegram_location_callback(self, _, update):
         """
         Called when a new telegram Location is received. The method will verify whether the incoming Location is
