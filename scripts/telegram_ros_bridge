@@ -16,8 +16,7 @@ from telegram.error import TimedOut
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram_ros.msg import Options
 
-WHITELIST_USERS = "~whitelist/users"
-WHITELIST_REQ = "~whitelist/required"
+WHITELIST = "~whitelist"
 
 
 class TelegramROSBridge(object):
@@ -28,9 +27,8 @@ class TelegramROSBridge(object):
         """
         self._caption_as_frame_id = caption_as_frame_id
 
-        self._whitelist_required = rospy.get_param(WHITELIST_REQ, False)  # Not the safe default but is consistent with current behavior
-        # Whitelisted users is a mapping from a name (for your reference) to id
-        self._whitelisted_users = rospy.get_param(WHITELIST_USERS, {})
+        # Whitelist is defaults to False to disable it and allow anyone. To enable the whitelist, set it to an (empty) list
+        self._whitelist = rospy.get_param(WHITELIST, False)
 
         self._from_telegram_string_publisher = rospy.Publisher("message_to_ros", String, queue_size=10)
         self._from_telegram_image_publisher = rospy.Publisher("image_to_ros", Image, queue_size=10)
@@ -73,42 +71,27 @@ class TelegramROSBridge(object):
 
         self._telegram_updater.stop()
 
-    def telegram_allow_only_registered(callback_function):
-        """
-        Decorator to restrict telegram methods only to registered users
-        :param callback_function: A callback function taking a telegram.Bot and a telegram.Update
-        :return: Wrapped callback function
-        """
-
-        @functools.wraps(callback_function)
-        def wrapper(self, bot, update):
-            self._whitelist_required = rospy.get_param(WHITELIST_REQ,False)
-            self._whitelisted_users = rospy.get_param(WHITELIST_USERS, {})
-
-            if not self._whitelist_required or update.message.from_user.id in self._whitelisted_users.values():
-                callback_function(self, bot, update)
-            else:
-                rospy.logwarn("Discarding message. User {} not whitelisted".format(update.message.from_user))
-                update.message.reply_text("You are not authorized to chat with this bot")
-        return wrapper
-
-    @telegram_allow_only_registered
     def _telegram_start_callback(self, _, update):
         """
         Called when a telegram user sends the '/start' event to the bot, using this event, the bridge can be connected
-        to a specific conversation
+        to a specific conversation.
+        This checks whether the user is on the whitelist if the whitelist is a list and allows any user if whitelist is False
         :param update: Received update event that holds the chat_id and message data
         """
-        if self._telegram_chat_id is not None and self._telegram_chat_id != update.message.chat_id:
-            rospy.logwarn("Changing to different chat_id!")
-            self._telegram_updater.bot.send_message(self._telegram_chat_id,
-                                                    "Lost ROS bridge connection to this chat_id (somebody took over)")
+        self._whitelist = rospy.get_param(WHITELIST, False)
+        if self._whitelist == False or isinstance(self._whitelist, list) and update.message.from_user.id in self._whitelist:
+            if self._telegram_chat_id is not None and self._telegram_chat_id != update.message.chat_id:
+                rospy.logwarn("Changing to different chat_id!")
+                self._telegram_updater.bot.send_message(self._telegram_chat_id,
+                                                        "Lost ROS bridge connection to this chat_id (somebody took over)")
+            self._telegram_chat_id = update.message.chat_id
 
-        self._telegram_chat_id = update.message.chat_id
-
-        rospy.loginfo("Starting telegram ROS bridge for chat id {}".format(self._telegram_chat_id))
-        update.message.reply_text(
-            "Telegram ROS bridge initialized, only replying to chat_id {} (current)".format(self._telegram_chat_id))
+            rospy.loginfo("Starting telegram ROS bridge for chat id {}".format(self._telegram_chat_id))
+            update.message.reply_text(
+                "Telegram ROS bridge initialized, only replying to chat_id {} (current)".format(self._telegram_chat_id))
+        else:
+            rospy.logwarn("Discarding message. User {} not whitelisted".format(update.message.from_user))
+            update.message.reply_text("You (chat id {}) are not authorized to chat with this bot".format(update.message.from_user['id']))
 
     def telegram_allow_only_active(callback_function):
         """

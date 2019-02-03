@@ -32,7 +32,9 @@ If you don't have a bot yet, chat to [BotFather](https://core.telegram.org/bots#
 
 ## Run
 
-    rosrun telegram_ros telegram_ros_bridge _token:=[YOUR_BOT_API_TOKEN]
+    rosrun telegram_ros telegram_ros_bridge _token:="YourToken:FromBotFather"
+    
+    rosparam set /telegram_ros_bridge/whitelist '[1, 2]'  # For the chat IDs that should be allowed
 
 ## ROS API
 
@@ -53,7 +55,6 @@ If you don't have a bot yet, chat to [BotFather](https://core.telegram.org/bots#
 ### Parameters
 
 - `~token` (string): Telegram BOT API token
-- `~caption_as_frame_id` (bool): Whether to put the caption of the image in the frame_id (default=`False`)
-- `~whitelist/required` (bool): True when only whitelisted users can chat with the bot or False when everyone can use the bot (default=`False`)
-- `~whitelist/users` (dict {string:int}): Mapping of username to Telegram user ID. Only these users are allowed to chat with the bot. 
-    Users can be added with the `add_user_to_whitelist` service.
+- `~caption_as_frame_id` (bool): Whether to put the caption of the image in the frame_id (default: `False`)
+- `~whitelist` (bool or list): False when everyone can use the bot or 
+    a list of telegram user IDs that are allowed to talk with the bot (default: `False`)
