@@ -181,7 +181,8 @@ class TelegramROSBridge(object):
         """
         cv2_img = self._cv_bridge.imgmsg_to_cv2(msg, "bgr8")
         self._telegram_updater.bot.send_photo(self._telegram_chat_id,
-                                              photo=StringIO(cv2.imencode('.jpg', cv2_img)[1].tostring()))
+                                              photo=StringIO(cv2.imencode('.jpg', cv2_img)[1].tostring()),
+                                              caption=msg.header.frame_id)
 
     @telegram_callback
     def _telegram_location_callback(self, _, update):
