@@ -11,9 +11,10 @@ from StringIO import StringIO
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image, NavSatFix
 from std_msgs.msg import String, Header
-from telegram import Location
+from telegram import Location, ReplyKeyboardMarkup
 from telegram.error import TimedOut
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram_ros.msg import Options
 
 
 class TelegramROSBridge(object):
@@ -34,6 +35,8 @@ class TelegramROSBridge(object):
                                                               self._ros_image_callback, queue_size=10)
         self._to_telegram_location_subscriber = rospy.Subscriber("location_from_ros", NavSatFix,
                                                                  self._ros_location_callback, queue_size=10)
+        self._to_telegram_options_subscriber = rospy.Subscriber("options_from_ros", Options,
+                                                                 self._ros_options_callback, queue_size=10)
         # Set CvBridge
         self._cv_bridge = CvBridge()
 
@@ -207,6 +210,16 @@ class TelegramROSBridge(object):
         :param msg: NavSatFix that the robot wants to share
         """
         self._telegram_updater.bot.send_location(self._telegram_chat_id, location=Location(msg.longitude, msg.latitude))
+
+    @ros_callback
+    def _ros_options_callback(self, msg):
+        """
+        Called when a new ROS NavSatFix message is coming in that should be send to the telegram conversation
+        :param msg: Options that the robot wants to share
+        """
+        self._telegram_updater.bot.send_message(self._telegram_chat_id,
+                                                text=msg.question,
+                                                reply_markup=ReplyKeyboardMarkup([msg.options], resize_keyboard=True))
 
 
 if __name__ == '__main__':
