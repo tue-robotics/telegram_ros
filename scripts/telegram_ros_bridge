@@ -219,7 +219,9 @@ class TelegramROSBridge(object):
         """
         self._telegram_updater.bot.send_message(self._telegram_chat_id,
                                                 text=msg.question,
-                                                reply_markup=ReplyKeyboardMarkup([msg.options], resize_keyboard=True))
+                                                reply_markup=ReplyKeyboardMarkup([msg.options],
+                                                                                 resize_keyboard=True,
+                                                                                 one_time_keyboard=True))
 
 
 if __name__ == '__main__':
