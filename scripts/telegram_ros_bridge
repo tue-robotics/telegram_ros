@@ -217,11 +217,17 @@ class TelegramROSBridge(object):
         Called when a new ROS NavSatFix message is coming in that should be send to the telegram conversation
         :param msg: Options that the robot wants to share
         """
+
+        def chunks(l, n):
+            """Yield successive n-sized chunks from l."""
+            for i in range(0, len(l), n):
+                yield l[i:i + n]
         self._telegram_updater.bot.send_message(self._telegram_chat_id,
                                                 text=msg.question,
-                                                reply_markup=ReplyKeyboardMarkup([msg.options],
+                                                reply_markup=ReplyKeyboardMarkup(list(chunks(msg.options, 5)),
                                                                                  resize_keyboard=True,
-                                                                                 one_time_keyboard=True))
+                                                                                 one_time_keyboard=True)
+        )
 
 
 if __name__ == '__main__':
