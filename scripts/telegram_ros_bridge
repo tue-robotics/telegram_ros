@@ -214,7 +214,7 @@ class TelegramROSBridge(object):
     @ros_callback
     def _ros_options_callback(self, msg):
         """
-        Called when a new ROS NavSatFix message is coming in that should be send to the telegram conversation
+        Called when a new ROS Options message is coming in that should be send to the telegram conversation
         :param msg: Options that the robot wants to share
         """
 
