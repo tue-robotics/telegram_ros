@@ -1,8 +1,8 @@
-sudo: required
+os: linux
+dist: bionic
 language: generic
-dist: trusty
 
-matrix:
+jobs:
   include:
   - name: "Kinetic"
     env: ROS_DISTRO=kinetic
