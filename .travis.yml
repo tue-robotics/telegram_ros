@@ -1,17 +1,21 @@
 os: linux
 dist: bionic
-language: generic
+language: cpp
 
-jobs:
-  include:
-  - name: "Kinetic"
-    env: ROS_DISTRO=kinetic
+services:
+  - docker
 
-  - name: "Melodic"
-    env: ROS_DISTRO=melodic
+before_install:
+  - wget https://raw.githubusercontent.com/tue-robotics/tue-env/master/ci/install-package.sh
+  - wget https://raw.githubusercontent.com/tue-robotics/tue-env/master/ci/build-package.sh
+  - wget https://raw.githubusercontent.com/tue-robotics/tue-env/master/ci/test-package.sh
+  - export PACKAGE=${TRAVIS_REPO_SLUG#*/}
 
 install:
-  - git clone https://github.com/ros-industrial/industrial_ci.git .ci_config
+  - bash install-package.sh --package=$PACKAGE --branch=$TRAVIS_BRANCH --commit=$TRAVIS_COMMIT --pullrequest=$TRAVIS_PULL_REQUEST
+
+before_script:
+  - bash build-package.sh --package=$PACKAGE
 
 script:
-  - .ci_config/travis.sh
+  - bash test-package.sh --package=$PACKAGE
