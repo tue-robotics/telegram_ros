@@ -27,9 +27,6 @@ class TelegramROSBridge(object):
         """
         self._caption_as_frame_id = caption_as_frame_id
 
-        # Whitelist is defaults to False to disable it and allow anyone. To enable the whitelist, set it to an (empty) list
-        self._whitelist = rospy.get_param(WHITELIST, False)
-
         self._from_telegram_string_publisher = rospy.Publisher("message_to_ros", String, queue_size=10)
         self._from_telegram_image_publisher = rospy.Publisher("image_to_ros", Image, queue_size=10)
         self._from_telegram_location_publisher = rospy.Publisher("location_to_ros", NavSatFix, queue_size=10)
@@ -76,10 +73,13 @@ class TelegramROSBridge(object):
         Called when a telegram user sends the '/start' event to the bot, using this event, the bridge can be connected
         to a specific conversation.
         This checks whether the user is on the whitelist if the whitelist is a list and allows any user if whitelist is False
+
         :param update: Received update event that holds the chat_id and message data
         """
-        self._whitelist = rospy.get_param(WHITELIST, False)
-        if self._whitelist == False or isinstance(self._whitelist, list) and update.message.from_user.id in self._whitelist:
+        
+        # Whitelist defaults to False to disable it and allow anyone. To enable the whitelist, set it to an (empty) list
+        whitelist = rospy.get_param(WHITELIST, False)
+        if whitelist == False or isinstance(whitelist, list) and update.message.from_user.id in whitelist:
             if self._telegram_chat_id is not None and self._telegram_chat_id != update.message.chat_id:
                 rospy.logwarn("Changing to different chat_id!")
                 self._telegram_updater.bot.send_message(self._telegram_chat_id,
