@@ -83,10 +83,11 @@ class TelegramROSBridge(object):
             if self._telegram_chat_id is not None and self._telegram_chat_id != update.message.chat_id:
                 rospy.logwarn("Changing to different chat_id!")
                 self._telegram_updater.bot.send_message(self._telegram_chat_id,
-                                                        "Lost ROS bridge connection to this chat_id (somebody took over)")
+                                                        "Lost ROS bridge connection to this chat_id '{}' (somebody took over)".format(update.message.chat_id))
+
+            rospy.loginfo("Starting telegram ROS bridge for new chat id {}".format(update.message.chat_id))
             self._telegram_chat_id = update.message.chat_id
 
-            rospy.loginfo("Starting telegram ROS bridge for chat id {}".format(self._telegram_chat_id))
             update.message.reply_text(
                 "Telegram ROS bridge initialized, only replying to chat_id {} (current)".format(self._telegram_chat_id))
         else:
