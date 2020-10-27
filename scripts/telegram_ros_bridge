@@ -86,7 +86,7 @@ class TelegramROSBridge(object):
                 if hasattr(update.message.chat, 'first_name') and update.message.chat.first_name:
                     new_user = update.message.chat.first_name
                 self._telegram_updater.bot.send_message(self._telegram_chat_id,
-                                                        "Lost ROS bridge connection to this chat_id {} ({}) took over)"
+                                                        "Lost ROS bridge connection to this chat_id {} ({} took over)"
                                                         .format(update.message.chat_id, new_user))
 
             rospy.loginfo("Starting telegram ROS bridge for new chat id {}".format(update.message.chat_id))
