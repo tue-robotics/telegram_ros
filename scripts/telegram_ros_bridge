@@ -82,8 +82,12 @@ class TelegramROSBridge(object):
         if whitelist == False or isinstance(whitelist, list) and update.message.from_user.id in whitelist:
             if self._telegram_chat_id is not None and self._telegram_chat_id != update.message.chat_id:
                 rospy.logwarn("Changing to different chat_id!")
+                new_user = "'somebody'"
+                if hasattr(update.message.chat, 'first_name') and update.message.chat.first_name:
+                    new_user = update.message.chat.first_name
                 self._telegram_updater.bot.send_message(self._telegram_chat_id,
-                                                        "Lost ROS bridge connection to this chat_id '{}' (somebody took over)".format(update.message.chat_id))
+                                                        "Lost ROS bridge connection to this chat_id {} ({}) took over)"
+                                                        .format(update.message.chat_id, new_user))
 
             rospy.loginfo("Starting telegram ROS bridge for new chat id {}".format(update.message.chat_id))
             self._telegram_chat_id = update.message.chat_id
