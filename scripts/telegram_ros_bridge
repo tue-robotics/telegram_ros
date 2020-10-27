@@ -91,7 +91,7 @@ class TelegramROSBridge(object):
                 "Telegram ROS bridge initialized, only replying to chat_id {} (current)".format(self._telegram_chat_id))
         else:
             rospy.logwarn("Discarding message. User {} not whitelisted".format(update.message.from_user))
-            update.message.reply_text("You (chat id {}) are not authorized to chat with this bot".format(update.message.from_user['id']))
+            update.message.reply_text("You (user id {}) are not authorized to chat with this bot".format(update.message.from_user.id))
 
     def telegram_callback(callback_function):
         """
