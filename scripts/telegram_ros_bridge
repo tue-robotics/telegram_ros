@@ -72,12 +72,12 @@ class TelegramROSBridge(object):
         """
         Called when a telegram user sends the '/start' event to the bot, using this event, the bridge can be connected
         to a specific conversation.
-        This checks whether the user is on the whitelist if the whitelist is a list and allows any user if whitelist is False
+        This checks whether the user is on the whitelist if the whitelist is a list and allows any user if whitelist is empty
 
         :param update: Received update event that holds the chat_id and message data
         """
         
-        # Whitelist defaults to False to disable it and allow anyone. To enable the whitelist, set it to an (empty) list
+        # Whitelist defaults to an empty list to disable it and allow anyone. To enable the whitelist, set it to a list with at least one item
         whitelist = rospy.get_param(WHITELIST, [])
         if not whitelist or update.message.from_user.id in whitelist:
             if self._telegram_chat_id is not None and self._telegram_chat_id != update.message.chat_id:
