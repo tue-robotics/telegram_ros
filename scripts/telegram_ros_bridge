@@ -78,8 +78,8 @@ class TelegramROSBridge(object):
         """
         
         # Whitelist defaults to False to disable it and allow anyone. To enable the whitelist, set it to an (empty) list
-        whitelist = rospy.get_param(WHITELIST, False)
-        if whitelist == False or isinstance(whitelist, list) and update.message.from_user.id in whitelist:
+        whitelist = rospy.get_param(WHITELIST, [])
+        if not whitelist or update.message.from_user.id in whitelist:
             if self._telegram_chat_id is not None and self._telegram_chat_id != update.message.chat_id:
                 rospy.logwarn("Changing to different chat_id!")
                 new_user = "'somebody'"
