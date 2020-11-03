@@ -5,6 +5,7 @@ find_package(catkin REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   message_generation
   sensor_msgs
+  std_msgs
 )
 
 # Generate messages in the 'msg' folder
@@ -18,8 +19,9 @@ add_message_files(
 generate_messages(
   DEPENDENCIES
   sensor_msgs
+  std_msgs
 )
 
 catkin_package(
-  CATKIN_DEPENDS message_runtime sensor_msgs
+  CATKIN_DEPENDS message_runtime sensor_msgs std_msgs
 )

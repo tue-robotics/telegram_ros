@@ -16,6 +16,8 @@ from telegram.error import TimedOut
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram_ros.msg import Options
 
+WHITELIST = "~whitelist"
+
 
 class TelegramROSBridge(object):
     def __init__(self, api_token, caption_as_frame_id):
@@ -37,6 +39,7 @@ class TelegramROSBridge(object):
                                                                  self._ros_location_callback, queue_size=10)
         self._to_telegram_options_subscriber = rospy.Subscriber("options_from_ros", Options,
                                                                  self._ros_options_callback, queue_size=10)
+
         # Set CvBridge
         self._cv_bridge = CvBridge()
 
@@ -65,6 +68,36 @@ class TelegramROSBridge(object):
 
         self._telegram_updater.stop()
 
+    def _telegram_start_callback(self, _, update):
+        """
+        Called when a telegram user sends the '/start' event to the bot, using this event, the bridge can be connected
+        to a specific conversation.
+        This checks whether the user is on the whitelist if the whitelist is a list and allows any user if whitelist is empty
+
+        :param update: Received update event that holds the chat_id and message data
+        """
+        
+        # Whitelist defaults to an empty list to disable it and allow anyone. To enable the whitelist, set it to a list with at least one item
+        whitelist = rospy.get_param(WHITELIST, [])
+        if not whitelist or update.message.from_user.id in whitelist:
+            if self._telegram_chat_id is not None and self._telegram_chat_id != update.message.chat_id:
+                rospy.logwarn("Changing to different chat_id!")
+                new_user = "'somebody'"
+                if hasattr(update.message.chat, 'first_name') and update.message.chat.first_name:
+                    new_user = update.message.chat.first_name
+                self._telegram_updater.bot.send_message(self._telegram_chat_id,
+                                                        "Lost ROS bridge connection to this chat_id {} ({} took over)"
+                                                        .format(update.message.chat_id, new_user))
+
+            rospy.loginfo("Starting telegram ROS bridge for new chat id {}".format(update.message.chat_id))
+            self._telegram_chat_id = update.message.chat_id
+
+            update.message.reply_text(
+                "Telegram ROS bridge initialized, only replying to chat_id {} (current)".format(self._telegram_chat_id))
+        else:
+            rospy.logwarn("Discarding message. User {} not whitelisted".format(update.message.from_user))
+            update.message.reply_text("You (user id {}) are not authorized to chat with this bot".format(update.message.from_user.id))
+
     def telegram_callback(callback_function):
         """
         Decorator to restrict telegram methods only to the active chat or tell to /start one if needed
@@ -86,23 +119,6 @@ class TelegramROSBridge(object):
                 callback_function(self, bot, update)
 
         return wrapper
-
-    def _telegram_start_callback(self, _, update):
-        """
-        Called when a telegram user sends the '/start' event to the bot, using this event, the bridge can be connected
-        to a specific conversation
-        :param update: Received update event that holds the chat_id and message data
-        """
-        if self._telegram_chat_id is not None and self._telegram_chat_id != update.message.chat_id:
-            rospy.logwarn("Changing to different chat_id!")
-            self._telegram_updater.bot.send_message(self._telegram_chat_id,
-                                                    "Lost ROS bridge connection to this chat_id (somebody took over)")
-
-        self._telegram_chat_id = update.message.chat_id
-
-        rospy.loginfo("Starting telegram ROS bridge for chat id {}".format(self._telegram_chat_id))
-        update.message.reply_text(
-            "Telegram ROS bridge initialized, only replying to chat_id {} (current). Type /stop to disconnect".format(self._telegram_chat_id))
 
     @telegram_callback
     def _telegram_stop_callback(self, _, update):
