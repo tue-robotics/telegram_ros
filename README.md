@@ -1,5 +1,7 @@
 # telegram_ros
 
+[![CI](https://github.com/tue-robotics/telegram_ros/actions/workflows/main.yml/badge.svg)](https://github.com/tue-robotics/telegram_ros/actions/workflows/main.yml)
+
 Bridges between a [Telegram](https://telegram.org/) conversation and [ROS](http://ros.org).
 
 Only a single Telegram user can send and receive text, images and locations to/from the ROS bridge.
@@ -8,33 +10,37 @@ Once connected, a user can type `/stop` to disconnect
 
 Currently, there is *no* authentication (Issue #6)
 
-## Travis CI Build Status
-
-[![Build Status](https://travis-ci.org/tue-robotics/telegram_ros.svg)](https://travis-ci.org/tue-robotics/telegram_ros)
-
 ## Installation (from source)
 
 Go to the `src` directory of your catkin workspace and clone the package from github:
 
-    git clone https://github.com/tue-robotics/telegram_ros.git
-    
+```bash
+git clone https://github.com/tue-robotics/telegram_ros.git
+```
+
 Install the required dependencies:
 
-    rosdep install --from-path -y -i telegram_ros
-    
+```bash
+rosdep install --from-path -y -i telegram_ros
+```
+
 Compile your workspace
 
-    catkin build # or catkin_make (make sure to refresh your workspace env afterwards)
+```bash
+catkin build # or catkin_make (make sure to refresh your workspace env afterwards)
+```
 
 ## Create a bot
 
-If you don't have a bot yet, chat to [BotFather](https://core.telegram.org/bots#6-botfather) in Telegram to create one. You can provide a name for your bot and you will receive the API token. 
+If you don't have a bot yet, chat to [BotFather](https://core.telegram.org/bots#6-botfather) in Telegram to create one. You can provide a name for your bot and you will receive the API token.
 
 ## Run
 
-    rosrun telegram_ros telegram_ros_bridge _token:="YourToken:FromBotFather"
-    
-    rosparam set /telegram_ros_bridge/whitelist '[1, 2]'  # For the chat IDs that should be allowed
+```bash
+rosrun telegram_ros telegram_ros_bridge _token:="YourToken:FromBotFather"
+
+rosparam set /telegram_ros_bridge/whitelist '[1, 2]'  # For the chat IDs that should be allowed
+```
 
 ## ROS API
 
@@ -56,5 +62,5 @@ If you don't have a bot yet, chat to [BotFather](https://core.telegram.org/bots#
 
 - `~token` (string): Telegram BOT API token
 - `~caption_as_frame_id` (bool): Whether to put the caption of the image in the frame_id (default: `False`)
-- `~whitelist` (bool or list): False when everyone can use the bot or 
+- `~whitelist` (bool or list): False when everyone can use the bot or
     a list of telegram user IDs that are allowed to talk with the bot (default: `False`)
