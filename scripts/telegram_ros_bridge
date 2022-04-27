@@ -7,10 +7,8 @@ import functools
 import cv2
 import numpy as np
 import rospy
-try:
-    from StringIO import StringIO ## for Python 2
-except ImportError:
-    from io import StringIO ## for Python 3
+
+from io import BytesIO
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image, NavSatFix
 from std_msgs.msg import String, Header
@@ -203,7 +201,7 @@ class TelegramROSBridge(object):
         """
         cv2_img = self._cv_bridge.imgmsg_to_cv2(msg, "bgr8")
         self._telegram_updater.bot.send_photo(self._telegram_chat_id,
-                                              photo=StringIO(cv2.imencode('.jpg', cv2_img)[1].tostring()),
+                                              photo=BytesIO(cv2.imencode('.jpg', cv2_img)[1].tobytes()),
                                               caption=msg.header.frame_id)
 
     @telegram_callback
