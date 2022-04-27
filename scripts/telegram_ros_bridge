@@ -14,9 +14,9 @@ except ImportError:
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image, NavSatFix
 from std_msgs.msg import String, Header
-from telegram import Location, ReplyKeyboardMarkup
+from telegram import Location, ReplyKeyboardMarkup, Update
 from telegram.error import TimedOut
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, CallbackContext, CommandHandler, MessageHandler, Filters
 from telegram_ros.msg import Options
 
 WHITELIST = "~whitelist"
@@ -71,7 +71,7 @@ class TelegramROSBridge(object):
 
         self._telegram_updater.stop()
 
-    def _telegram_start_callback(self, _, update):
+    def _telegram_start_callback(self, update: Update, context: CallbackContext):
         """
         Called when a telegram user sends the '/start' event to the bot, using this event, the bridge can be connected
         to a specific conversation.
@@ -109,7 +109,7 @@ class TelegramROSBridge(object):
         """
 
         @functools.wraps(callback_function)
-        def wrapper(self, bot, update):
+        def wrapper(self, update: Update, context: CallbackContext):
             rospy.logdebug("Incoming update from telegram: %s", update)
             if self._telegram_chat_id is None:
                 rospy.logwarn("Discarding message. No active chat_id.")
@@ -119,12 +119,12 @@ class TelegramROSBridge(object):
                 update.message.reply_text(
                     "ROS Bridge initialized to another chat_id. Type /start to connect to this chat_id")
             else:
-                callback_function(self, bot, update)
+                callback_function(self, update, context)
 
         return wrapper
 
     @telegram_callback
-    def _telegram_stop_callback(self, _, update):
+    def _telegram_stop_callback(self, update: Update, context: CallbackContext):
         """
         Called when a telegram user sends the '/stop' event to the bot. Then, the user is disconnected from the bot and
         will no longer receive messages.
@@ -156,7 +156,7 @@ class TelegramROSBridge(object):
         return wrapper
 
     @telegram_callback
-    def _telegram_message_callback(self, _, update):
+    def _telegram_message_callback(self, update: Update, context: CallbackContext):
         """
         Called when a new telegram message has been received. The method will verify whether the incoming message is
         from the bridges telegram conversation by comparing the chat_id.
@@ -174,7 +174,7 @@ class TelegramROSBridge(object):
         self._telegram_updater.bot.send_message(self._telegram_chat_id, msg.data)
 
     @telegram_callback
-    def _telegram_photo_callback(self, _, update):
+    def _telegram_photo_callback(self, update: Update, context: CallbackContext):
         """
         Called when a new telegram photo has been received. The method will verify whether the incoming message is
         from the bridges telegram conversation by comparing the chat_id.
@@ -207,7 +207,7 @@ class TelegramROSBridge(object):
                                               caption=msg.header.frame_id)
 
     @telegram_callback
-    def _telegram_location_callback(self, _, update):
+    def _telegram_location_callback(self, update: Update, context: CallbackContext):
         """
         Called when a new telegram Location is received. The method will verify whether the incoming Location is
         from the bridged telegram conversation by comparing the chat_id.
