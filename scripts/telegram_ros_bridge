@@ -162,7 +162,7 @@ class TelegramROSBridge(object):
         from the bridges telegram conversation by comparing the chat_id.
         :param update: Received update that holds the chat_id and message data
         """
-        text = update.message.text.encode('utf-8')
+        text = update.message.text
         self._from_telegram_string_publisher.publish(String(data=text))
 
     @ros_callback
