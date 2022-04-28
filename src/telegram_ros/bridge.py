@@ -108,6 +108,7 @@ class TelegramROSBridge(object):
                 "You (user id {}) are not authorized to chat with this bot".format(update.message.from_user.id)
             )
 
+    @staticmethod
     def telegram_callback(callback_function):
         """
         Decorator to restrict telegram methods only to the active chat or tell to /start one if needed
@@ -146,6 +147,7 @@ class TelegramROSBridge(object):
         )
         self._telegram_chat_id = None
 
+    @staticmethod
     def ros_callback(callback_function):
         """
         Decorator that verifies whether we have an active chat id and handles possible exceptions
