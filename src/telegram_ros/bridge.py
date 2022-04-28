@@ -265,7 +265,7 @@ class TelegramROSBridge(object):
         def chunks(l, n):  # noqa: E741
             """Yield successive n-sized chunks from l."""
             for i in range(0, len(l), n):
-                yield l[i : i + n]
+                yield l[i : i + n]  # noqa: E203
 
         self._telegram_updater.bot.send_message(
             self._telegram_chat_id,
