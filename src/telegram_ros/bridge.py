@@ -45,6 +45,7 @@ def telegram_callback(callback_function):
 def ros_callback(callback_function):
     """
     Decorator that verifies whether we have an active chat id and handles possible exceptions
+
     :param callback_function: A callback function taking a ros msg
     :return: Wrapped callback function
     """
@@ -159,6 +160,7 @@ class TelegramROSBridge(object):
         """
         Called when a telegram user sends the '/stop' event to the bot. Then, the user is disconnected from the bot and
         will no longer receive messages.
+
         :param update: Received update event that holds the chat_id and message data
         """
 
@@ -174,6 +176,7 @@ class TelegramROSBridge(object):
         """
         Called when a new telegram message has been received. The method will verify whether the incoming message is
         from the bridges telegram conversation by comparing the chat_id.
+
         :param update: Received update that holds the chat_id and message data
         """
         text = update.message.text
@@ -182,7 +185,8 @@ class TelegramROSBridge(object):
     @ros_callback
     def _ros_string_callback(self, msg):
         """
-        Called when a new ROS String message is coming in that should be send to the telegram conversation
+        Called when a new ROS String message is coming in that should be sent to the telegram conversation
+
         :param msg: String message
         """
         self._telegram_updater.bot.send_message(self._telegram_chat_id, msg.data)
@@ -192,6 +196,7 @@ class TelegramROSBridge(object):
         """
         Called when a new telegram photo has been received. The method will verify whether the incoming message is
         from the bridges telegram conversation by comparing the chat_id.
+
         :param update: Received update that holds the chat_id and message data
         """
         rospy.logdebug("Received image, downloading highest resolution image ...")
@@ -212,7 +217,8 @@ class TelegramROSBridge(object):
     @ros_callback
     def _ros_image_callback(self, msg):
         """
-        Called when a new ROS Image message is coming in that should be send to the telegram conversation
+        Called when a new ROS Image message is coming in that should be sent to the telegram conversation
+
         :param msg: Image message
         """
         cv2_img = self._cv_bridge.imgmsg_to_cv2(msg, "bgr8")
@@ -227,6 +233,7 @@ class TelegramROSBridge(object):
         """
         Called when a new telegram Location is received. The method will verify whether the incoming Location is
         from the bridged telegram conversation by comparing the chat_id.
+
         :param update: Received update that holds the chat_id and message data
         """
         self._from_telegram_location_publisher.publish(
@@ -241,7 +248,8 @@ class TelegramROSBridge(object):
     @ros_callback
     def _ros_location_callback(self, msg):
         """
-        Called when a new ROS NavSatFix message is coming in that should be send to the telegram conversation
+        Called when a new ROS NavSatFix message is coming in that should be sent to the telegram conversation
+
         :param msg: NavSatFix that the robot wants to share
         """
         self._telegram_updater.bot.send_location(self._telegram_chat_id, location=Location(msg.longitude, msg.latitude))
@@ -249,7 +257,8 @@ class TelegramROSBridge(object):
     @ros_callback
     def _ros_options_callback(self, msg):
         """
-        Called when a new ROS Options message is coming in that should be send to the telegram conversation
+        Called when a new ROS Options message is coming in that should be sent to the telegram conversation
+
         :param msg: Options that the robot wants to share
         """
 
