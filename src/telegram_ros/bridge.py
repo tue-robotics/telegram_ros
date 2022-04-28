@@ -17,10 +17,56 @@ from telegram_ros.msg import Options
 WHITELIST = "~whitelist"
 
 
+def telegram_callback(callback_function):
+    """
+    Decorator to restrict telegram methods only to the active chat or tell to /start one if needed
+
+    :param callback_function: A callback function taking a telegram.Bot and a telegram.Update
+    :return: Wrapped callback function
+    """
+
+    @functools.wraps(callback_function)
+    def wrapper(self, update: Update, context: CallbackContext):
+        rospy.logdebug("Incoming update from telegram: %s", update)
+        if self._telegram_chat_id is None:
+            rospy.logwarn("Discarding message. No active chat_id.")
+            update.message.reply_text("ROS Bridge not initialized. Type /start to set-up ROS bridge")
+        elif self._telegram_chat_id != update.message.chat_id:
+            rospy.logwarn("Discarding message. Invalid chat_id")
+            update.message.reply_text(
+                "ROS Bridge initialized to another chat_id. Type /start to connect to this chat_id"
+            )
+        else:
+            callback_function(self, update, context)
+
+    return wrapper
+
+
+def ros_callback(callback_function):
+    """
+    Decorator that verifies whether we have an active chat id and handles possible exceptions
+    :param callback_function: A callback function taking a ros msg
+    :return: Wrapped callback function
+    """
+
+    @functools.wraps(callback_function)
+    def wrapper(self, msg):
+        if not self._telegram_chat_id:
+            rospy.logerr("ROS Bridge not initialized, dropping message of type %s", msg._type)
+        else:
+            try:
+                callback_function(self, msg)
+            except TimedOut as e:
+                rospy.logerr("Telegram timeout: %s", e)
+
+    return wrapper
+
+
 class TelegramROSBridge(object):
     def __init__(self, api_token, caption_as_frame_id):
         """
         Telegram ROS bridge that bridges between a telegram chat conversation and ROS
+
         :param api_token: The telegram API token
         """
         self._caption_as_frame_id = caption_as_frame_id
@@ -108,30 +154,6 @@ class TelegramROSBridge(object):
                 "You (user id {}) are not authorized to chat with this bot".format(update.message.from_user.id)
             )
 
-    @staticmethod
-    def telegram_callback(callback_function):
-        """
-        Decorator to restrict telegram methods only to the active chat or tell to /start one if needed
-        :param callback_function: A callback function taking a telegram.Bot and a telegram.Update
-        :return: Wrapped callback function
-        """
-
-        @functools.wraps(callback_function)
-        def wrapper(self, update: Update, context: CallbackContext):
-            rospy.logdebug("Incoming update from telegram: %s", update)
-            if self._telegram_chat_id is None:
-                rospy.logwarn("Discarding message. No active chat_id.")
-                update.message.reply_text("ROS Bridge not initialized. Type /start to set-up ROS bridge")
-            elif self._telegram_chat_id != update.message.chat_id:
-                rospy.logwarn("Discarding message. Invalid chat_id")
-                update.message.reply_text(
-                    "ROS Bridge initialized to another chat_id. Type /start to connect to this chat_id"
-                )
-            else:
-                callback_function(self, update, context)
-
-        return wrapper
-
     @telegram_callback
     def _telegram_stop_callback(self, update: Update, _: CallbackContext):
         """
@@ -146,26 +168,6 @@ class TelegramROSBridge(object):
             " Type /start to reconnect".format(self._telegram_chat_id)
         )
         self._telegram_chat_id = None
-
-    @staticmethod
-    def ros_callback(callback_function):
-        """
-        Decorator that verifies whether we have an active chat id and handles possible exceptions
-        :param callback_function: A callback function taking a ros msg
-        :return: Wrapped callback function
-        """
-
-        @functools.wraps(callback_function)
-        def wrapper(self, msg):
-            if not self._telegram_chat_id:
-                rospy.logerr("ROS Bridge not initialized, dropping message of type %s", msg._type)
-            else:
-                try:
-                    callback_function(self, msg)
-                except TimedOut as e:
-                    rospy.logerr("Telegram timeout: %s", e)
-
-        return wrapper
 
     @telegram_callback
     def _telegram_message_callback(self, update: Update, _: CallbackContext):
