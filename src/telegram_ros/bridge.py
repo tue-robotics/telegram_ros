@@ -183,7 +183,7 @@ class TelegramROSBridge:
         self._from_telegram_string_publisher.publish(String(data=text))
 
     @ros_callback
-    def _ros_string_callback(self, msg):
+    def _ros_string_callback(self, msg: String):
         """
         Called when a new ROS String message is coming in that should be sent to the telegram conversation
 
@@ -215,7 +215,7 @@ class TelegramROSBridge:
             self._from_telegram_string_publisher.publish(String(data=update.message.caption))
 
     @ros_callback
-    def _ros_image_callback(self, msg):
+    def _ros_image_callback(self, msg: Image):
         """
         Called when a new ROS Image message is coming in that should be sent to the telegram conversation
 
@@ -246,7 +246,7 @@ class TelegramROSBridge:
         )
 
     @ros_callback
-    def _ros_location_callback(self, msg):
+    def _ros_location_callback(self, msg: NavSatFix):
         """
         Called when a new ROS NavSatFix message is coming in that should be sent to the telegram conversation
 
@@ -255,7 +255,7 @@ class TelegramROSBridge:
         self._telegram_updater.bot.send_location(self._telegram_chat_id, location=Location(msg.longitude, msg.latitude))
 
     @ros_callback
-    def _ros_options_callback(self, msg):
+    def _ros_options_callback(self, msg: Options):
         """
         Called when a new ROS Options message is coming in that should be sent to the telegram conversation
 
