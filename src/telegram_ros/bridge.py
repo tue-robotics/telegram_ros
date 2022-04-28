@@ -249,7 +249,7 @@ class TelegramROSBridge(object):
         :param msg: Options that the robot wants to share
         """
 
-        def chunks(l, n):
+        def chunks(l, n):  # noqa: E741
             """Yield successive n-sized chunks from l."""
             for i in range(0, len(l), n):
                 yield l[i : i + n]
