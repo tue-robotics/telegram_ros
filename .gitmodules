@@ -1,0 +1,4 @@
+[submodule "docs"]
+	path = docs
+	url = https://github.com/tue-robotics/tue_documentation_python.git
+	branch = master
