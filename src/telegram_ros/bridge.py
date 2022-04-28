@@ -72,7 +72,7 @@ class TelegramROSBridge(object):
 
         self._telegram_updater.stop()
 
-    def _telegram_start_callback(self, update: Update, context: CallbackContext):
+    def _telegram_start_callback(self, update: Update, _: CallbackContext):
         """
         Called when a telegram user sends the '/start' event to the bot, using this event, the bridge can be connected
         to a specific conversation.
@@ -133,7 +133,7 @@ class TelegramROSBridge(object):
         return wrapper
 
     @telegram_callback
-    def _telegram_stop_callback(self, update: Update, context: CallbackContext):
+    def _telegram_stop_callback(self, update: Update, _: CallbackContext):
         """
         Called when a telegram user sends the '/stop' event to the bot. Then, the user is disconnected from the bot and
         will no longer receive messages.
@@ -168,7 +168,7 @@ class TelegramROSBridge(object):
         return wrapper
 
     @telegram_callback
-    def _telegram_message_callback(self, update: Update, context: CallbackContext):
+    def _telegram_message_callback(self, update: Update, _: CallbackContext):
         """
         Called when a new telegram message has been received. The method will verify whether the incoming message is
         from the bridges telegram conversation by comparing the chat_id.
@@ -186,7 +186,7 @@ class TelegramROSBridge(object):
         self._telegram_updater.bot.send_message(self._telegram_chat_id, msg.data)
 
     @telegram_callback
-    def _telegram_photo_callback(self, update: Update, context: CallbackContext):
+    def _telegram_photo_callback(self, update: Update, _: CallbackContext):
         """
         Called when a new telegram photo has been received. The method will verify whether the incoming message is
         from the bridges telegram conversation by comparing the chat_id.
@@ -221,7 +221,7 @@ class TelegramROSBridge(object):
         )
 
     @telegram_callback
-    def _telegram_location_callback(self, update: Update, context: CallbackContext):
+    def _telegram_location_callback(self, update: Update, _: CallbackContext):
         """
         Called when a new telegram Location is received. The method will verify whether the incoming Location is
         from the bridged telegram conversation by comparing the chat_id.
