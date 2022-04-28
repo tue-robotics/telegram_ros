@@ -63,7 +63,7 @@ def ros_callback(callback_function):
     return wrapper
 
 
-class TelegramROSBridge(object):
+class TelegramROSBridge:
     def __init__(self, api_token, caption_as_frame_id):
         """
         Telegram ROS bridge that bridges between a telegram chat conversation and ROS
