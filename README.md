@@ -1,6 +1,6 @@
 # telegram_ros
 
-[![CI](https://github.com/tue-robotics/telegram_ros/actions/workflows/main.yml/badge.svg)](https://github.com/tue-robotics/telegram_ros/actions/workflows/main.yml)
+[![CI](https://github.com/tue-robotics/telegram_ros/actions/workflows/main.yml/badge.svg)](https://github.com/tue-robotics/telegram_ros/actions/workflows/main.yml) [![Lint](https://github.com/tue-robotics/telegram_ros/actions/workflows/lint.yml/badge.svg)](https://github.com/tue-robotics/telegram_ros/actions/workflows/lint.yml)
 
 Bridges between a [Telegram](https://telegram.org/) conversation and [ROS](http://ros.org).
 
