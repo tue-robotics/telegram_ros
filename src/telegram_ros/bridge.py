@@ -66,9 +66,9 @@ def ros_callback(callback_function):
 class TelegramROSBridge:
     def __init__(self, api_token, caption_as_frame_id):
         """
-        Telegram ROS bridge that bridges between a telegram chat conversation and ROS
+        Telegram ROS bridge that bridges between a Telegram chat conversation and ROS
 
-        :param api_token: The telegram API token
+        :param api_token: The Telegram API token
         """
         self._caption_as_frame_id = caption_as_frame_id
 
@@ -109,19 +109,19 @@ class TelegramROSBridge:
 
     def spin(self):
         """
-        Starts the telegram update thread and spins until a SIGINT is received
+        Starts the Telegram update thread and spins until a SIGINT is received
         """
         self._telegram_updater.start_polling()
         rospy.loginfo("Telegram updater started polling, spinning ..")
 
         rospy.spin()
-        rospy.loginfo("Shutting down telegram updater ...")
+        rospy.loginfo("Shutting down Telegram updater ...")
 
         self._telegram_updater.stop()
 
     def _telegram_start_callback(self, update: Update, _: CallbackContext):
         """
-        Called when a telegram user sends the '/start' event to the bot, using this event, the bridge can be connected
+        Called when a Telegram user sends the '/start' event to the bot, using this event, the bridge can be connected
         to a specific conversation.
         This checks whether the user is on the whitelist if the whitelist is a list and allows any user if whitelist is empty
 
@@ -143,7 +143,7 @@ class TelegramROSBridge:
                     ),
                 )
 
-            rospy.loginfo("Starting telegram ROS bridge for new chat id {}".format(update.message.chat_id))
+            rospy.loginfo("Starting Telegram ROS bridge for new chat id {}".format(update.message.chat_id))
             self._telegram_chat_id = update.message.chat_id
 
             update.message.reply_text(
@@ -158,13 +158,13 @@ class TelegramROSBridge:
     @telegram_callback
     def _telegram_stop_callback(self, update: Update, _: CallbackContext):
         """
-        Called when a telegram user sends the '/stop' event to the bot. Then, the user is disconnected from the bot and
+        Called when a Telegram user sends the '/stop' event to the bot. Then, the user is disconnected from the bot and
         will no longer receive messages.
 
         :param update: Received update event that holds the chat_id and message data
         """
 
-        rospy.loginfo("Stopping telegram ROS bridge for chat id {}".format(self._telegram_chat_id))
+        rospy.loginfo("Stopping Telegram ROS bridge for chat id {}".format(self._telegram_chat_id))
         update.message.reply_text(
             "Disconnecting chat_id {}. So long and thanks for all the fish!"
             " Type /start to reconnect".format(self._telegram_chat_id)
@@ -174,8 +174,8 @@ class TelegramROSBridge:
     @telegram_callback
     def _telegram_message_callback(self, update: Update, _: CallbackContext):
         """
-        Called when a new telegram message has been received. The method will verify whether the incoming message is
-        from the bridges telegram conversation by comparing the chat_id.
+        Called when a new Telegram message has been received. The method will verify whether the incoming message is
+        from the bridges Telegram conversation by comparing the chat_id.
 
         :param update: Received update that holds the chat_id and message data
         """
@@ -185,7 +185,7 @@ class TelegramROSBridge:
     @ros_callback
     def _ros_string_callback(self, msg: String):
         """
-        Called when a new ROS String message is coming in that should be sent to the telegram conversation
+        Called when a new ROS String message is coming in that should be sent to the Telegram conversation
 
         :param msg: String message
         """
@@ -194,8 +194,8 @@ class TelegramROSBridge:
     @telegram_callback
     def _telegram_photo_callback(self, update: Update, _: CallbackContext):
         """
-        Called when a new telegram photo has been received. The method will verify whether the incoming message is
-        from the bridges telegram conversation by comparing the chat_id.
+        Called when a new Telegram photo has been received. The method will verify whether the incoming message is
+        from the bridges Telegram conversation by comparing the chat_id.
 
         :param update: Received update that holds the chat_id and message data
         """
@@ -217,7 +217,7 @@ class TelegramROSBridge:
     @ros_callback
     def _ros_image_callback(self, msg: Image):
         """
-        Called when a new ROS Image message is coming in that should be sent to the telegram conversation
+        Called when a new ROS Image message is coming in that should be sent to the Telegram conversation
 
         :param msg: Image message
         """
@@ -231,8 +231,8 @@ class TelegramROSBridge:
     @telegram_callback
     def _telegram_location_callback(self, update: Update, _: CallbackContext):
         """
-        Called when a new telegram Location is received. The method will verify whether the incoming Location is
-        from the bridged telegram conversation by comparing the chat_id.
+        Called when a new Telegram Location is received. The method will verify whether the incoming Location is
+        from the bridged Telegram conversation by comparing the chat_id.
 
         :param update: Received update that holds the chat_id and message data
         """
@@ -248,7 +248,7 @@ class TelegramROSBridge:
     @ros_callback
     def _ros_location_callback(self, msg: NavSatFix):
         """
-        Called when a new ROS NavSatFix message is coming in that should be sent to the telegram conversation
+        Called when a new ROS NavSatFix message is coming in that should be sent to the Telegram conversation
 
         :param msg: NavSatFix that the robot wants to share
         """
@@ -257,7 +257,7 @@ class TelegramROSBridge:
     @ros_callback
     def _ros_options_callback(self, msg: Options):
         """
-        Called when a new ROS Options message is coming in that should be sent to the telegram conversation
+        Called when a new ROS Options message is coming in that should be sent to the Telegram conversation
 
         :param msg: Options that the robot wants to share
         """
