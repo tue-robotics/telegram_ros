@@ -202,7 +202,10 @@ class TelegramROSBridge:
 
         :param msg: String message
         """
-        self._telegram_updater.bot.send_message(self._telegram_chat_id, msg.data)
+        if msg.data:
+            self._telegram_updater.bot.send_message(self._telegram_chat_id, msg.data)
+        else:
+            rospy.logerr("Ignoring empty string message")
 
     @telegram_callback
     def _telegram_photo_callback(self, update: Update, _: CallbackContext):
