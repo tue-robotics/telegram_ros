@@ -107,6 +107,19 @@ class TelegramROSBridge:
             MessageHandler(Filters.location, self._telegram_location_callback)
         )
 
+        rospy.core.add_preshutdown_hook(self._shutdown)
+
+    def _shutdown(self, reason: str):
+        """
+        Sending a message to the current chat id on destruction.
+        """
+        if self._telegram_chat_id:
+            self._telegram_updater.bot.send_message(
+                self._telegram_chat_id,
+                f"Stopping Telegram ROS bridge, ending this chat. Reason of shutdown: {reason}."
+                " Type /start to connect again after starting a new Telegram ROS bridge.",
+            )
+
     def spin(self):
         """
         Starts the Telegram update thread and spins until a SIGINT is received
