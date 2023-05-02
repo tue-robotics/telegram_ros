@@ -10,7 +10,7 @@ from sensor_msgs.msg import Image, NavSatFix
 from std_msgs.msg import String, Header
 from telegram import Location, ReplyKeyboardMarkup, Update
 from telegram.error import TimedOut
-from telegram.ext import Updater, CallbackContext, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, CallbackContext, CommandHandler, MessageHandler, filters
 from telegram_ros.msg import Options
 
 
@@ -101,10 +101,10 @@ class TelegramROSBridge:
 
         self._telegram_updater.dispatcher.add_handler(CommandHandler("start", self._telegram_start_callback))
         self._telegram_updater.dispatcher.add_handler(CommandHandler("stop", self._telegram_stop_callback))
-        self._telegram_updater.dispatcher.add_handler(MessageHandler(Filters.text, self._telegram_message_callback))
-        self._telegram_updater.dispatcher.add_handler(MessageHandler(Filters.photo, self._telegram_photo_callback))
+        self._telegram_updater.dispatcher.add_handler(MessageHandler(filters.TEXT, self._telegram_message_callback))
+        self._telegram_updater.dispatcher.add_handler(MessageHandler(filters.PHOTO, self._telegram_photo_callback))
         self._telegram_updater.dispatcher.add_handler(
-            MessageHandler(Filters.location, self._telegram_location_callback)
+            MessageHandler(filters.LOCATION, self._telegram_location_callback)
         )
 
         rospy.core.add_preshutdown_hook(self._shutdown)

@@ -24,7 +24,7 @@
   <exec_depend>message_runtime</exec_depend>
   <exec_depend>python3-numpy</exec_depend>
   <exec_depend>python3-opencv</exec_depend>
-  <exec_depend version_lt="20.0.0" version_gte="12.0.0">python3-telegram-bot</exec_depend>
+  <exec_depend version_gte="20.0.0">python3-telegram-bot</exec_depend>
   <exec_depend>rospy</exec_depend>
 
   <doc_depend>python3-sphinx</doc_depend>
