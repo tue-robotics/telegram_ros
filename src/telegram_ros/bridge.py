@@ -132,7 +132,7 @@ class TelegramROSBridge:
 
         self._telegram_app.stop()
 
-    def _telegram_start_callback(self, update: Update, _: CallbackContext):
+    async def _telegram_start_callback(self, update: Update, _: CallbackContext):
         """
         Called when a Telegram user sends the '/start' event to the bot, using this event, the bridge can be connected
         to a specific conversation.
@@ -169,7 +169,7 @@ class TelegramROSBridge:
             )
 
     @telegram_callback
-    def _telegram_stop_callback(self, update: Update, _: CallbackContext):
+    async def _telegram_stop_callback(self, update: Update, _: CallbackContext):
         """
         Called when a Telegram user sends the '/stop' event to the bot. Then, the user is disconnected from the bot and
         will no longer receive messages.
@@ -185,7 +185,7 @@ class TelegramROSBridge:
         self._telegram_chat_id = None
 
     @telegram_callback
-    def _telegram_message_callback(self, update: Update, _: CallbackContext):
+    async def _telegram_message_callback(self, update: Update, _: CallbackContext):
         """
         Called when a new Telegram message has been received. The method will verify whether the incoming message is
         from the bridges Telegram conversation by comparing the chat_id.
@@ -208,7 +208,7 @@ class TelegramROSBridge:
             rospy.logwarn("Ignoring empty string message")
 
     @telegram_callback
-    def _telegram_photo_callback(self, update: Update, _: CallbackContext):
+    async def _telegram_photo_callback(self, update: Update, _: CallbackContext):
         """
         Called when a new Telegram photo has been received. The method will verify whether the incoming message is
         from the bridges Telegram conversation by comparing the chat_id.
@@ -246,7 +246,7 @@ class TelegramROSBridge:
         )
 
     @telegram_callback
-    def _telegram_location_callback(self, update: Update, _: CallbackContext):
+    async def _telegram_location_callback(self, update: Update, _: CallbackContext):
         """
         Called when a new Telegram Location is received. The method will verify whether the incoming Location is
         from the bridged Telegram conversation by comparing the chat_id.
