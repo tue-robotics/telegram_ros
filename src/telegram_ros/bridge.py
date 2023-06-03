@@ -11,7 +11,7 @@ from sensor_msgs.msg import Image, NavSatFix
 from std_msgs.msg import String, Header
 from telegram import Location, ReplyKeyboardMarkup, Update
 from telegram.error import TimedOut
-from telegram.ext import Updater, CallbackContext, CommandHandler, MessageHandler, filters
+from telegram.ext import ApplicationBuilder, Updater, CallbackContext, CommandHandler, MessageHandler, filters
 from telegram_ros.msg import Options
 
 
@@ -94,19 +94,34 @@ class TelegramROSBridge:
         self._cv_bridge = CvBridge()
 
         # Telegram IO
-        self._telegram_chat_id = None
-        self._telegram_updater = Updater(api_token, Queue())
-        self._telegram_updater.dispatcher.add_error_handler(
+        self._telegram_application = ApplicationBuilder().token(api_token).build()
+
+        self._telegram_application.add_error_handler(
             lambda _, update, error: rospy.logerr("Update {} caused error {}".format(update, error))
         )
-
-        self._telegram_updater.dispatcher.add_handler(CommandHandler("start", self._telegram_start_callback))
-        self._telegram_updater.dispatcher.add_handler(CommandHandler("stop", self._telegram_stop_callback))
-        self._telegram_updater.dispatcher.add_handler(MessageHandler(filters.TEXT, self._telegram_message_callback))
-        self._telegram_updater.dispatcher.add_handler(MessageHandler(filters.PHOTO, self._telegram_photo_callback))
-        self._telegram_updater.dispatcher.add_handler(
+        self._telegram_application.add_handler(CommandHandler("start", self._telegram_start_callback))
+        self._telegram_application.add_handler(CommandHandler("stop", self._telegram_stop_callback))
+        self._telegram_application.add_handler(MessageHandler(filters.TEXT, self._telegram_message_callback))
+        self._telegram_application.add_handler(MessageHandler(filters.PHOTO, self._telegram_photo_callback))
+        self._telegram_application.add_handler(
             MessageHandler(filters.LOCATION, self._telegram_location_callback)
         )
+
+        #TODO old IO remove
+        #self._telegram_chat_id = None
+        #self._telegram_updater = Updater(api_token, Queue())
+        #self._telegram_updater.dispatcher.add_error_handler(
+        #    lambda _, update, error: rospy.logerr("Update {} caused error {}".format(update, error))
+        #)
+
+        #self._telegram_updater.dispatcher.add_handler(CommandHandler("start", self._telegram_start_callback))
+        #self._telegram_updater.dispatcher.add_handler(CommandHandler("stop", self._telegram_stop_callback))
+        #self._telegram_updater.dispatcher.add_handler(MessageHandler(filters.TEXT, self._telegram_message_callback))
+        #self._telegram_updater.dispatcher.add_handler(MessageHandler(filters.PHOTO, self._telegram_photo_callback))
+        #self._telegram_updater.dispatcher.add_handler(
+        #    MessageHandler(filters.LOCATION, self._telegram_location_callback)
+        #)
+        # end of old IO
 
         rospy.core.add_preshutdown_hook(self._shutdown)
 
