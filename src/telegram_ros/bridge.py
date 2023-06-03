@@ -130,7 +130,7 @@ class TelegramROSBridge:
         Sending a message to the current chat id on destruction.
         """
         if self._telegram_chat_id:
-            self._telegram_updater.bot.send_message(
+            self._telegram_application.updater.bot.send_message(
                 self._telegram_chat_id,
                 f"Stopping Telegram ROS bridge, ending this chat. Reason of shutdown: {reason}."
                 " Type /start to connect again after starting a new Telegram ROS bridge.",
@@ -140,13 +140,13 @@ class TelegramROSBridge:
         """
         Starts the Telegram update thread and spins until a SIGINT is received
         """
-        self._telegram_updater.start_polling()
+        self._telegram_application.updater.start_polling()
         rospy.loginfo("Telegram updater started polling, spinning ..")
 
         rospy.spin()
         rospy.loginfo("Shutting down Telegram updater ...")
 
-        self._telegram_updater.stop()
+        self._telegram_application.updater.stop()
 
     def _telegram_start_callback(self, update: Update, _: CallbackContext):
         """
@@ -165,7 +165,7 @@ class TelegramROSBridge:
                 new_user = "'somebody'"
                 if hasattr(update.message.chat, "first_name") and update.message.chat.first_name:
                     new_user = update.message.chat.first_name
-                self._telegram_updater.bot.send_message(
+                self._telegram_application.updater.bot.send_message(
                     self._telegram_chat_id,
                     "Lost ROS bridge connection to this chat_id {} ({} took over)".format(
                         update.message.chat_id, new_user
@@ -219,7 +219,7 @@ class TelegramROSBridge:
         :param msg: String message
         """
         if msg.data:
-            self._telegram_updater.bot.send_message(self._telegram_chat_id, msg.data)
+            self._telegram_application.updater.bot.send_message(self._telegram_chat_id, msg.data)
         else:
             rospy.logwarn("Ignoring empty string message")
 
@@ -254,7 +254,7 @@ class TelegramROSBridge:
         :param msg: Image message
         """
         cv2_img = self._cv_bridge.imgmsg_to_cv2(msg, "bgr8")
-        self._telegram_updater.bot.send_photo(
+        self._telegram_application.updater.bot.send_photo(
             self._telegram_chat_id,
             photo=BytesIO(cv2.imencode(".jpg", cv2_img)[1].tobytes()),
             caption=msg.header.frame_id,
@@ -284,7 +284,7 @@ class TelegramROSBridge:
 
         :param msg: NavSatFix that the robot wants to share
         """
-        self._telegram_updater.bot.send_location(self._telegram_chat_id, location=Location(msg.longitude, msg.latitude))
+        self._telegram_application.updater.bot.send_location(self._telegram_chat_id, location=Location(msg.longitude, msg.latitude))
 
     @ros_callback
     def _ros_options_callback(self, msg: Options):
@@ -299,7 +299,7 @@ class TelegramROSBridge:
             for i in range(0, len(l), n):
                 yield l[i : i + n]  # noqa: E203
 
-        self._telegram_updater.bot.send_message(
+        self._telegram_application.updater.bot.send_message(
             self._telegram_chat_id,
             text=msg.question,
             reply_markup=ReplyKeyboardMarkup(
