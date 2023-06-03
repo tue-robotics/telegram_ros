@@ -159,12 +159,12 @@ class TelegramROSBridge:
             rospy.loginfo("Starting Telegram ROS bridge for new chat id {}".format(update.message.chat_id))
             self._telegram_chat_id = update.message.chat_id
 
-            update.message.reply_text(
+            await update.message.reply_text(
                 "Telegram ROS bridge initialized, only replying to chat_id {} (current)".format(self._telegram_chat_id)
             )
         else:
             rospy.logwarn("Discarding message. User {} not whitelisted".format(update.message.from_user))
-            update.message.reply_text(
+            await update.message.reply_text(
                 "You (user id {}) are not authorized to chat with this bot".format(update.message.from_user.id)
             )
 
