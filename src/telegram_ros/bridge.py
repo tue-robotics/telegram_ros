@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import rospy
 
+from asyncio import Queue
 from io import BytesIO
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image, NavSatFix
@@ -94,7 +95,7 @@ class TelegramROSBridge:
 
         # Telegram IO
         self._telegram_chat_id = None
-        self._telegram_updater = Updater(api_token)
+        self._telegram_updater = Updater(api_token, Queue())
         self._telegram_updater.dispatcher.add_error_handler(
             lambda _, update, error: rospy.logerr("Update {} caused error {}".format(update, error))
         )
