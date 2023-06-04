@@ -28,14 +28,14 @@ def telegram_callback(callback_function):
     """
 
     @functools.wraps(callback_function)
-    def wrapper(self, update: Update, context: CallbackContext):
+    async def wrapper(self, update: Update, context: CallbackContext):
         rospy.logdebug("Incoming update from telegram: %s", update)
         if self._telegram_chat_id is None:
             rospy.logwarn("Discarding message. No active chat_id.")
-            update.message.reply_text("ROS Bridge not initialized. Type /start to set-up ROS bridge")
+            await update.message.reply_text("ROS Bridge not initialized. Type /start to set-up ROS bridge")
         elif self._telegram_chat_id != update.message.chat_id:
             rospy.logwarn("Discarding message. Invalid chat_id")
-            update.message.reply_text(
+            await update.message.reply_text(
                 "ROS Bridge initialized to another chat_id. Type /start to connect to this chat_id"
             )
         else:
@@ -178,9 +178,9 @@ class TelegramROSBridge:
         """
 
         rospy.loginfo("Stopping Telegram ROS bridge for chat id {}".format(self._telegram_chat_id))
-        update.message.reply_text(
-            "Disconnecting chat_id {}. So long and thanks for all the fish!"
-            " Type /start to reconnect".format(self._telegram_chat_id)
+        await update.message.reply_text(
+            f"Disconnecting chat_id {self._telegram_chat_id}. So long and thanks for all the fish!"
+            " Type /start to reconnect"
         )
         self._telegram_chat_id = None
 
