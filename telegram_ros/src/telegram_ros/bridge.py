@@ -39,7 +39,7 @@ def telegram_callback(callback_function):
                 "ROS Bridge initialized to another chat_id. Type /start to connect to this chat_id"
             )
         else:
-            callback_function(self, update, context)
+            await callback_function(self, update, context)
 
     return wrapper
 
@@ -58,7 +58,7 @@ def ros_callback(callback_function):
             rospy.logerr("ROS Bridge not initialized, dropping message of type %s", msg._type)
         else:
             try:
-                callback_function(self, msg)
+                asyncio.run(callback_function(self, msg))
             except TimedOut as e:
                 rospy.logerr("Telegram timeout: %s", e)
 
@@ -114,10 +114,12 @@ class TelegramROSBridge:
         Sending a message to the current chat id on destruction.
         """
         if self._telegram_chat_id:
-            self._telegram_app.bot.send_message(
-                self._telegram_chat_id,
-                f"Stopping Telegram ROS bridge, ending this chat. Reason of shutdown: {reason}."
-                " Type /start to connect again after starting a new Telegram ROS bridge.",
+            asyncio.run(
+                self._telegram_app.bot.send_message(
+                    self._telegram_chat_id,
+                    f"Stopping Telegram ROS bridge, ending this chat. Reason of shutdown: {reason}."
+                    " Type /start to connect again after starting a new Telegram ROS bridge.",
+                )
             )
 
     def spin(self):
@@ -196,14 +198,14 @@ class TelegramROSBridge:
         self._from_telegram_string_publisher.publish(String(data=text))
 
     @ros_callback
-    def _ros_string_callback(self, msg: String):
+    async def _ros_string_callback(self, msg: String):
         """
         Called when a new ROS String message is coming in that should be sent to the Telegram conversation
 
         :param msg: String message
         """
         if msg.data:
-            self._telegram_app.bot.send_message(self._telegram_chat_id, msg.data)
+            await self._telegram_app.bot.send_message(self._telegram_chat_id, msg.data)
         else:
             rospy.logwarn("Ignoring empty string message")
 
@@ -216,8 +218,8 @@ class TelegramROSBridge:
         :param update: Received update that holds the chat_id and message data
         """
         rospy.logdebug("Received image, downloading highest resolution image ...")
-        new_file = asyncio.run(update.message.photo[-1].get_file())
-        byte_array = asyncio.run(new_file.download_as_bytearray())
+        new_file = await update.message.photo[-1].get_file()
+        byte_array = await new_file.download_as_bytearray()
         rospy.logdebug("Download complete, publishing ...")
 
         img = cv2.imdecode(np.asarray(byte_array, dtype=np.uint8), cv2.IMREAD_COLOR)
@@ -232,14 +234,14 @@ class TelegramROSBridge:
             self._from_telegram_string_publisher.publish(String(data=update.message.caption))
 
     @ros_callback
-    def _ros_image_callback(self, msg: Image):
+    async def _ros_image_callback(self, msg: Image):
         """
         Called when a new ROS Image message is coming in that should be sent to the Telegram conversation
 
         :param msg: Image message
         """
         cv2_img = self._cv_bridge.imgmsg_to_cv2(msg, "bgr8")
-        self._telegram_app.bot.send_photo(
+        await self._telegram_app.bot.send_photo(
             self._telegram_chat_id,
             photo=BytesIO(cv2.imencode(".jpg", cv2_img)[1].tobytes()),
             caption=msg.header.frame_id,
@@ -263,16 +265,18 @@ class TelegramROSBridge:
         )
 
     @ros_callback
-    def _ros_location_callback(self, msg: NavSatFix):
+    async def _ros_location_callback(self, msg: NavSatFix):
         """
         Called when a new ROS NavSatFix message is coming in that should be sent to the Telegram conversation
 
         :param msg: NavSatFix that the robot wants to share
         """
-        self._telegram_app.bot.send_location(self._telegram_chat_id, location=Location(msg.longitude, msg.latitude))
+        await self._telegram_app.bot.send_location(
+            self._telegram_chat_id, location=Location(msg.longitude, msg.latitude)
+        )
 
     @ros_callback
-    def _ros_options_callback(self, msg: Options):
+    async def _ros_options_callback(self, msg: Options):
         """
         Called when a new ROS Options message is coming in that should be sent to the Telegram conversation
 
@@ -284,7 +288,7 @@ class TelegramROSBridge:
             for i in range(0, len(l), n):
                 yield l[i : i + n]  # noqa: E203
 
-        self._telegram_app.bot.send_message(
+        await self._telegram_app.bot.send_message(
             self._telegram_chat_id,
             text=msg.question,
             reply_markup=ReplyKeyboardMarkup(
