@@ -13,7 +13,7 @@ from std_msgs.msg import String, Header
 from telegram import Location, ReplyKeyboardMarkup, Update
 from telegram.error import TimedOut
 from telegram.ext import Application, CallbackContext, CommandHandler, MessageHandler, filters
-from telegram_ros.msg import Options
+from telegram_ros_msgs.msg import Options
 
 
 WHITELIST = "~whitelist"

@@ -11,4 +11,4 @@ jobs:
           submodules: recursive
       - uses: psf/black@stable
         with:
-          options: --check --diff --color -l 120 --exclude docs
+          options: telegram_ros --check --diff --color -l 120 --exclude docs

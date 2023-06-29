@@ -1,4 +1,4 @@
-[submodule "docs"]
-	path = docs
+[submodule "telegram_ros/docs"]
+	path = telegram_ros/docs
 	url = https://github.com/tue-robotics/tue_documentation_python.git
 	branch = master
