@@ -1,3 +1,5 @@
+import asyncio
+
 import functools
 
 import cv2
@@ -10,8 +12,8 @@ from sensor_msgs.msg import Image, NavSatFix
 from std_msgs.msg import String, Header
 from telegram import Location, ReplyKeyboardMarkup, Update
 from telegram.error import TimedOut
-from telegram.ext import Updater, CallbackContext, CommandHandler, MessageHandler, filters
-from telegram_ros.msg import Options
+from telegram.ext import Application, CallbackContext, CommandHandler, MessageHandler, filters
+from telegram_ros_msgs.msg import Options
 
 
 WHITELIST = "~whitelist"
@@ -26,18 +28,18 @@ def telegram_callback(callback_function):
     """
 
     @functools.wraps(callback_function)
-    def wrapper(self, update: Update, context: CallbackContext):
+    async def wrapper(self, update: Update, context: CallbackContext):
         rospy.logdebug("Incoming update from telegram: %s", update)
         if self._telegram_chat_id is None:
             rospy.logwarn("Discarding message. No active chat_id.")
-            update.message.reply_text("ROS Bridge not initialized. Type /start to set-up ROS bridge")
+            await update.message.reply_text("ROS Bridge not initialized. Type /start to set-up ROS bridge")
         elif self._telegram_chat_id != update.message.chat_id:
             rospy.logwarn("Discarding message. Invalid chat_id")
-            update.message.reply_text(
+            await update.message.reply_text(
                 "ROS Bridge initialized to another chat_id. Type /start to connect to this chat_id"
             )
         else:
-            callback_function(self, update, context)
+            await callback_function(self, update, context)
 
     return wrapper
 
@@ -56,7 +58,7 @@ def ros_callback(callback_function):
             rospy.logerr("ROS Bridge not initialized, dropping message of type %s", msg._type)
         else:
             try:
-                callback_function(self, msg)
+                asyncio.run(callback_function(self, msg))
             except TimedOut as e:
                 rospy.logerr("Telegram timeout: %s", e)
 
@@ -94,18 +96,16 @@ class TelegramROSBridge:
 
         # Telegram IO
         self._telegram_chat_id = None
-        self._telegram_updater = Updater(api_token)
-        self._telegram_updater.dispatcher.add_error_handler(
+        self._telegram_app = Application.builder().token(api_token).build()
+        self._telegram_app.add_error_handler(
             lambda _, update, error: rospy.logerr("Update {} caused error {}".format(update, error))
         )
 
-        self._telegram_updater.dispatcher.add_handler(CommandHandler("start", self._telegram_start_callback))
-        self._telegram_updater.dispatcher.add_handler(CommandHandler("stop", self._telegram_stop_callback))
-        self._telegram_updater.dispatcher.add_handler(MessageHandler(filters.TEXT, self._telegram_message_callback))
-        self._telegram_updater.dispatcher.add_handler(MessageHandler(filters.PHOTO, self._telegram_photo_callback))
-        self._telegram_updater.dispatcher.add_handler(
-            MessageHandler(filters.LOCATION, self._telegram_location_callback)
-        )
+        self._telegram_app.add_handler(CommandHandler("start", self._telegram_start_callback))
+        self._telegram_app.add_handler(CommandHandler("stop", self._telegram_stop_callback))
+        self._telegram_app.add_handler(MessageHandler(filters.TEXT, self._telegram_message_callback))
+        self._telegram_app.add_handler(MessageHandler(filters.PHOTO, self._telegram_photo_callback))
+        self._telegram_app.add_handler(MessageHandler(filters.LOCATION, self._telegram_location_callback))
 
         rospy.core.add_preshutdown_hook(self._shutdown)
 
@@ -114,25 +114,27 @@ class TelegramROSBridge:
         Sending a message to the current chat id on destruction.
         """
         if self._telegram_chat_id:
-            self._telegram_updater.bot.send_message(
-                self._telegram_chat_id,
-                f"Stopping Telegram ROS bridge, ending this chat. Reason of shutdown: {reason}."
-                " Type /start to connect again after starting a new Telegram ROS bridge.",
+            asyncio.run(
+                self._telegram_app.bot.send_message(
+                    self._telegram_chat_id,
+                    f"Stopping Telegram ROS bridge, ending this chat. Reason of shutdown: {reason}."
+                    " Type /start to connect again after starting a new Telegram ROS bridge.",
+                )
             )
 
     def spin(self):
         """
         Starts the Telegram update thread and spins until a SIGINT is received
         """
-        self._telegram_updater.start_polling()
+        self._telegram_app.run_polling()  # ToDo: this is blocking
         rospy.loginfo("Telegram updater started polling, spinning ..")
 
         rospy.spin()
         rospy.loginfo("Shutting down Telegram updater ...")
 
-        self._telegram_updater.stop()
+        self._telegram_app.stop()
 
-    def _telegram_start_callback(self, update: Update, _: CallbackContext):
+    async def _telegram_start_callback(self, update: Update, _: CallbackContext):
         """
         Called when a Telegram user sends the '/start' event to the bot, using this event, the bridge can be connected
         to a specific conversation.
@@ -149,7 +151,7 @@ class TelegramROSBridge:
                 new_user = "'somebody'"
                 if hasattr(update.message.chat, "first_name") and update.message.chat.first_name:
                     new_user = update.message.chat.first_name
-                self._telegram_updater.bot.send_message(
+                self._telegram_app.bot.send_message(
                     self._telegram_chat_id,
                     "Lost ROS bridge connection to this chat_id {} ({} took over)".format(
                         update.message.chat_id, new_user
@@ -159,17 +161,17 @@ class TelegramROSBridge:
             rospy.loginfo("Starting Telegram ROS bridge for new chat id {}".format(update.message.chat_id))
             self._telegram_chat_id = update.message.chat_id
 
-            update.message.reply_text(
+            await update.message.reply_text(
                 "Telegram ROS bridge initialized, only replying to chat_id {} (current)".format(self._telegram_chat_id)
             )
         else:
             rospy.logwarn("Discarding message. User {} not whitelisted".format(update.message.from_user))
-            update.message.reply_text(
+            await update.message.reply_text(
                 "You (user id {}) are not authorized to chat with this bot".format(update.message.from_user.id)
             )
 
     @telegram_callback
-    def _telegram_stop_callback(self, update: Update, _: CallbackContext):
+    async def _telegram_stop_callback(self, update: Update, _: CallbackContext):
         """
         Called when a Telegram user sends the '/stop' event to the bot. Then, the user is disconnected from the bot and
         will no longer receive messages.
@@ -178,14 +180,14 @@ class TelegramROSBridge:
         """
 
         rospy.loginfo("Stopping Telegram ROS bridge for chat id {}".format(self._telegram_chat_id))
-        update.message.reply_text(
-            "Disconnecting chat_id {}. So long and thanks for all the fish!"
-            " Type /start to reconnect".format(self._telegram_chat_id)
+        await update.message.reply_text(
+            f"Disconnecting chat_id {self._telegram_chat_id}. So long and thanks for all the fish!"
+            " Type /start to reconnect"
         )
         self._telegram_chat_id = None
 
     @telegram_callback
-    def _telegram_message_callback(self, update: Update, _: CallbackContext):
+    async def _telegram_message_callback(self, update: Update, _: CallbackContext):
         """
         Called when a new Telegram message has been received. The method will verify whether the incoming message is
         from the bridges Telegram conversation by comparing the chat_id.
@@ -196,19 +198,19 @@ class TelegramROSBridge:
         self._from_telegram_string_publisher.publish(String(data=text))
 
     @ros_callback
-    def _ros_string_callback(self, msg: String):
+    async def _ros_string_callback(self, msg: String):
         """
         Called when a new ROS String message is coming in that should be sent to the Telegram conversation
 
         :param msg: String message
         """
         if msg.data:
-            self._telegram_updater.bot.send_message(self._telegram_chat_id, msg.data)
+            await self._telegram_app.bot.send_message(self._telegram_chat_id, msg.data)
         else:
             rospy.logwarn("Ignoring empty string message")
 
     @telegram_callback
-    def _telegram_photo_callback(self, update: Update, _: CallbackContext):
+    async def _telegram_photo_callback(self, update: Update, _: CallbackContext):
         """
         Called when a new Telegram photo has been received. The method will verify whether the incoming message is
         from the bridges Telegram conversation by comparing the chat_id.
@@ -216,7 +218,8 @@ class TelegramROSBridge:
         :param update: Received update that holds the chat_id and message data
         """
         rospy.logdebug("Received image, downloading highest resolution image ...")
-        byte_array = update.message.photo[-1].get_file().download_as_bytearray()
+        new_file = await update.message.photo[-1].get_file()
+        byte_array = await new_file.download_as_bytearray()
         rospy.logdebug("Download complete, publishing ...")
 
         img = cv2.imdecode(np.asarray(byte_array, dtype=np.uint8), cv2.IMREAD_COLOR)
@@ -231,21 +234,21 @@ class TelegramROSBridge:
             self._from_telegram_string_publisher.publish(String(data=update.message.caption))
 
     @ros_callback
-    def _ros_image_callback(self, msg: Image):
+    async def _ros_image_callback(self, msg: Image):
         """
         Called when a new ROS Image message is coming in that should be sent to the Telegram conversation
 
         :param msg: Image message
         """
         cv2_img = self._cv_bridge.imgmsg_to_cv2(msg, "bgr8")
-        self._telegram_updater.bot.send_photo(
+        await self._telegram_app.bot.send_photo(
             self._telegram_chat_id,
             photo=BytesIO(cv2.imencode(".jpg", cv2_img)[1].tobytes()),
             caption=msg.header.frame_id,
         )
 
     @telegram_callback
-    def _telegram_location_callback(self, update: Update, _: CallbackContext):
+    async def _telegram_location_callback(self, update: Update, _: CallbackContext):
         """
         Called when a new Telegram Location is received. The method will verify whether the incoming Location is
         from the bridged Telegram conversation by comparing the chat_id.
@@ -262,16 +265,18 @@ class TelegramROSBridge:
         )
 
     @ros_callback
-    def _ros_location_callback(self, msg: NavSatFix):
+    async def _ros_location_callback(self, msg: NavSatFix):
         """
         Called when a new ROS NavSatFix message is coming in that should be sent to the Telegram conversation
 
         :param msg: NavSatFix that the robot wants to share
         """
-        self._telegram_updater.bot.send_location(self._telegram_chat_id, location=Location(msg.longitude, msg.latitude))
+        await self._telegram_app.bot.send_location(
+            self._telegram_chat_id, location=Location(msg.longitude, msg.latitude)
+        )
 
     @ros_callback
-    def _ros_options_callback(self, msg: Options):
+    async def _ros_options_callback(self, msg: Options):
         """
         Called when a new ROS Options message is coming in that should be sent to the Telegram conversation
 
@@ -283,7 +288,7 @@ class TelegramROSBridge:
             for i in range(0, len(l), n):
                 yield l[i : i + n]  # noqa: E203
 
-        self._telegram_updater.bot.send_message(
+        await self._telegram_app.bot.send_message(
             self._telegram_chat_id,
             text=msg.question,
             reply_markup=ReplyKeyboardMarkup(
