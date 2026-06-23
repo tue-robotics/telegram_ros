@@ -13,7 +13,6 @@ from telegram.error import TimedOut
 from telegram.ext import Updater, CallbackContext, CommandHandler, MessageHandler, filters
 from telegram_ros.msg import Options
 
-
 WHITELIST = "~whitelist"
 
 
