@@ -95,6 +95,7 @@ class TelegramROSBridge:
 
         # Telegram IO
         self._telegram_chat_id = None
+        self._api_token = api_token
 
         # As of python-telegram-bot 20, the library is fully asyncio based, while rospy is synchronous and
         # rospy.spin() blocks the main thread. We therefore run the Telegram Application (together with its own
@@ -105,13 +106,8 @@ class TelegramROSBridge:
         self._stop_event = None  # asyncio.Event, created inside the event loop thread
         self._telegram_thread = threading.Thread(target=self._run_event_loop, name="telegram_event_loop", daemon=True)
 
-        self._application = ApplicationBuilder().token(api_token).build()
-        self._application.add_error_handler(self._telegram_error_callback)
-        self._application.add_handler(CommandHandler("start", self._telegram_start_callback))
-        self._application.add_handler(CommandHandler("stop", self._telegram_stop_callback))
-        self._application.add_handler(MessageHandler(filters.TEXT, self._telegram_message_callback))
-        self._application.add_handler(MessageHandler(filters.PHOTO, self._telegram_photo_callback))
-        self._application.add_handler(MessageHandler(filters.LOCATION, self._telegram_location_callback))
+        # Built inside _telegram_main() so all asyncio primitives are created in the correct event loop context.
+        self._application = None
 
         rospy.core.add_preshutdown_hook(self._shutdown)
 
@@ -130,6 +126,18 @@ class TelegramROSBridge:
         Initialize, start and poll the Telegram Application, then wait for the stop event before shutting down.
         """
         self._stop_event = asyncio.Event()
+
+        # Build the Application here, inside the running event loop, so that all internal asyncio primitives
+        # (e.g. asyncio.Queue) are bound to self._event_loop. Building in __init__ (main thread) would bind them
+        # to the main thread's default loop instead, causing updates to never reach the handlers.
+        self._application = ApplicationBuilder().token(self._api_token).build()
+        self._application.add_error_handler(self._telegram_error_callback)
+        self._application.add_handler(CommandHandler("start", self._telegram_start_callback))
+        self._application.add_handler(CommandHandler("stop", self._telegram_stop_callback))
+        self._application.add_handler(MessageHandler(filters.TEXT, self._telegram_message_callback))
+        self._application.add_handler(MessageHandler(filters.PHOTO, self._telegram_photo_callback))
+        self._application.add_handler(MessageHandler(filters.LOCATION, self._telegram_location_callback))
+
         await self._application.initialize()
         await self._application.start()
         await self._application.updater.start_polling()
